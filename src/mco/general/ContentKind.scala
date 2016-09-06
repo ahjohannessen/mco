@@ -1,4 +1,4 @@
-package mco.core.general
+package mco.general
 
 sealed trait ContentKind {
   import ContentKind._
@@ -11,7 +11,7 @@ sealed trait ContentKind {
 }
 
 object ContentKind {
-  case class  Mod(enabled: Boolean)                           extends ContentKind
+  case class  Mod(enabled: Boolean = true)                    extends ContentKind
   case object Asset                                           extends ContentKind
   case object Doc                                             extends ContentKind
   case class  Garbage(`override`: Option[ContentKind] = None) extends ContentKind {

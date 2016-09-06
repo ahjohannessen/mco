@@ -1,6 +1,6 @@
 package mco
 package core
-package general
+package mco.general
 
 import org.scalacheck.{Arbitrary, Gen}
 import Arbitrary.arbitrary

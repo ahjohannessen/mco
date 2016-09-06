@@ -1,6 +1,6 @@
 package mco
 package core
-package standard
+package mco.io
 
 import better.files.File
 import general.{Content, Hash}

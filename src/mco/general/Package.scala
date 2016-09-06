@@ -1,10 +1,9 @@
-package mco.core.general
+package mco.general
 
 
-case class PackageData
+case class Package
 (
   key: String,
   contents: Set[Content],
-  hash: Hash,
   isInstalled: Boolean
 )

@@ -1,9 +1,8 @@
-package mco.core.general
+package mco.general
 
 
 case class Content(
   key : String,
-  hash: Hash,
   kind: ContentKind = ContentKind.Garbage(),
   isInstalled: Boolean = false
 )

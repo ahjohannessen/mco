@@ -1,6 +1,6 @@
 package mco
 package core
-package standard
+package mco.io
 
 import general.ContentKind.Mod
 import general.stubs.TracingTargetContext
@@ -91,7 +91,7 @@ class SimplePackageSpec extends UnitSpec with StubGenerators {
 
   "SimplePackage companion" should "create package for any combination of data and media" in {
     forAll { (key: String, media: Media) =>
-      SimplePackage(key, media).io() shouldBe defined
+      SimpleClassifier(key, media).io() shouldBe defined
     }
   }
 
@@ -102,6 +102,6 @@ class SimplePackageSpec extends UnitSpec with StubGenerators {
     }
   }
 
-  def packageFor(media: Media) = SimplePackage("test package", media).io().get
+  def packageFor(media: Media) = SimpleClassifier("test package", media).io().get
   def contentsOf(media: Media) = media.readContent.io()
 }

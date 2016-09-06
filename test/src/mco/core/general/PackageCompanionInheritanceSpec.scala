@@ -1,6 +1,6 @@
 package mco
 package core
-package general
+package mco.general
 
 import mco.core.general.Package.Companion
 
