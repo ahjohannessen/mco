@@ -1,6 +1,5 @@
 package mco.shell
 
-import cats.data.OptionT
 import mco.io._
 import Files._
 import mco.general.Repository

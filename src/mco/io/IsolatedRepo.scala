@@ -21,7 +21,6 @@ class IsolatedRepo private (source: Source[IO], target: Path, known: Map[String,
       (s: IsolatedRepo) => if (body(s)) action(s) else IO pure s
 
     val key = upd.key
-    println(s"${apply(oldKey).copy(contents = Set())} --> ${upd.copy(contents = Set())}")
 
     val result: IO[IsolatedRepo] = { IO pure this } flatMap
       onChange(_ => oldKey != key)(_ rename (oldKey, key)) flatMap
