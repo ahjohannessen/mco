@@ -38,21 +38,23 @@ object Files {
   type IO[A] = Free[FileOperationA, A]
   val IO = Monad[IO]
 
-  def childrenOf(path: Path)                   = liftF(ChildrenOf(path))
-  def descendantsOf(path: Path)                = liftF(DescendantsOf(path))
-  def removeFile(path: Path)                   = liftF(RemoveFile(path))
-  def isRegularFile(path: Path)                = liftF(IsRegularFile(path))
-  def isDirectory(path: Path)                  = liftF(IsDirectory(path))
-  def asArchive(path: Path)                    = liftF(AsArchive(path))
-  def readBytes(path: Path)                    = liftF(ReadBytes(path))
-  def setContent(path: Path, cnt: Array[Byte]) = liftF(SetContent(path, cnt))
-  def createDirectory(path: Path)              = liftF(CreateDirectory(path))
-  def copy(source: Path, dest: Path)           = liftF(Copy(source, dest))
-  def move(source: Path, dest: Path)           = liftF(Move(source, dest))
+  def childrenOf(path: Path)                   : IO[Stream[Path]] = liftF(ChildrenOf(path))
+  def descendantsOf(path: Path)                : IO[Stream[Path]] = liftF(DescendantsOf(path))
+  def removeFile(path: Path)                   : IO[Unit]         = liftF(RemoveFile(path))
+  def isRegularFile(path: Path)                : IO[Boolean]      = liftF(IsRegularFile(path))
+  def isDirectory(path: Path)                  : IO[Boolean]      = liftF(IsDirectory(path))
+  def asArchive(path: Path)                    : IO[Archive]      = liftF(AsArchive(path))
+  def readBytes(path: Path)                    : IO[Array[Byte]]  = liftF(ReadBytes(path))
+  def setContent(path: Path, cnt: Array[Byte]) : IO[Unit]         = liftF(SetContent(path, cnt))
+  def createDirectory(path: Path)              : IO[Unit]         = liftF(CreateDirectory(path))
+  def copy(source: Path, dest: Path)           : IO[Unit]         = liftF(Copy(source, dest))
+  def move(source: Path, dest: Path)           : IO[Unit]         = liftF(Move(source, dest))
 
-  private object UnsafeIO extends (FileOperationA ~> Id) {
-    @inline final def discard[A](a: => A): Unit = { a; () }
-    override def apply[A](fa: FileOperationA[A]): Id[A] = {
+  @inline final def discard[A](a: => A): Unit = { a; () }
+
+
+  def unsafePerformIO[A](program: IO[A]): A = program.foldMap(new (FileOperationA ~> Id) {
+    override def apply[B](fa: FileOperationA[B]): Id[B] = {
       val result = fa match {
         case ChildrenOf(path) => path.impure.children.map(Path).toStream
         case DescendantsOf(path) => path.impure.listRecursively.map(Path).toStream
@@ -66,9 +68,8 @@ object Files {
         case Copy(source, dest) => discard { source.impure.copyTo(dest.impure, overwrite = true) }
         case Move(source, dest) => discard { source.impure.moveTo(dest.impure, overwrite = true) }
       }
-      result.asInstanceOf[A]
+//      result
+      result.asInstanceOf[B]
     }
-  }
-
-  def unsafePerformIO[A](program: IO[A]): A = program.foldMap(UnsafeIO)
+  })
 }
