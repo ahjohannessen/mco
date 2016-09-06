@@ -1,7 +1,5 @@
 package mco.io
 
-import java.nio.file.Paths
-
 import mco.general.Media
 import mco.io.Files._
 import mco.utils.WhenOperator._

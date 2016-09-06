@@ -20,17 +20,33 @@ resourceDirectory in Test  <<= baseDirectory(_ / "test" / "resources")
 resolvers += "jitpack" at "https://jitpack.io"
 
 libraryDependencies ++=
-  Seq("org.scalatest" %% "scalatest" % "3.0.0" % "test"
-    , "org.scalacheck" %% "scalacheck" % "1.13.2" % "test"
+  Seq(
+    "org.scalatest" %% "scalatest" % "3.0.0" % "test",
+    "org.scalacheck" %% "scalacheck" % "1.13.2" % "test",
 
-    , "org.typelevel" %% "cats" % "0.7.2"
-    , "org.typelevel" %% "alleycats-core" % "0.1.6"
-    , "com.typesafe" % "config" % "1.3.0"
-    , "com.github.pathikrit" %% "better-files" % "2.16.0"
-    , "net.openhft" % "zero-allocation-hashing" % "0.6"
-    , "org.slf4j" % "slf4j-simple" % "1.7.21"
-    , "com.github.oleg-py" %% "schive" % "-SNAPSHOT"
-    , "net.sf.sevenzipjbinding" % "sevenzipjbinding-all-windows" % "9.20-2.00beta"
+    "org.typelevel" %% "cats" % "0.7.2",
+    "org.typelevel" %% "alleycats-core" % "0.1.6",
+
+    "com.typesafe" % "config" % "1.3.0",
+    "com.github.pathikrit" %% "better-files" % "2.16.0",
+    "net.openhft" % "zero-allocation-hashing" % "0.6",
+    "org.slf4j" % "slf4j-simple" % "1.7.21",
+    "com.github.oleg-py" %% "schive" % "-SNAPSHOT",
+    "net.sf.sevenzipjbinding" % "sevenzipjbinding-all-windows" % "9.20-2.00beta"
   )
 
-scalacOptions ++= Seq("-feature", "-deprecation")
+scalacOptions ++= Seq(
+  "-target:jvm-1.8",
+  "-encoding", "UTF-8",
+  "-unchecked",
+  "-feature",
+  "-deprecation",
+  "-Yno-adapted-args",
+  "-Ywarn-dead-code",
+  "-Ywarn-numeric-widen",
+  "-Ywarn-value-discard",
+  "-Xfatal-warnings",
+  "-Xlint",
+  "-Xfuture",
+  "-Ywarn-unused-import"
+)

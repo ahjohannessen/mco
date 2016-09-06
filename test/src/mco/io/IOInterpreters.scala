@@ -1,10 +1,7 @@
 package mco.io
 
-import java.nio.file.Paths
-
 import cats.data.State
 import cats.{Id, ~>}
-import com.olegpy.schive.Archive
 import mco.io.Files.Ast._
 import mco.io.Files._
 

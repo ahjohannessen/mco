@@ -2,7 +2,6 @@ package mco.io
 
 import better.files.File
 import mco.UnitSpec
-import mco.general._
 import Files._
 import IOInterpreters._
 

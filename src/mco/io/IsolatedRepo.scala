@@ -1,11 +1,8 @@
 package mco.io
 
-import scala.language.postfixOps
-
 import mco.general._
 import Files._
 import cats.data.{Xor, XorT}
-import alleycats.std.set._
 
 
 class IsolatedRepo private (source: Source[IO], target: Path, known: Map[String, (Package, Media[IO])]) extends Repository[IO, Path] {

@@ -38,7 +38,7 @@ object Files {
   import Ast._
 
   type IO[A] = Free[FileOperationA, A]
-  val IO = Monad[IO]
+  implicit val IO: Monad[IO] = Free.catsFreeMonadForFree[FileOperationA]
 
   def childrenOf(path: Path)                     : IO[Stream[Path]] = liftF(ChildrenOf(path))
   def descendantsOf(path: Path)                  : IO[Stream[Path]] = liftF(DescendantsOf(path))
