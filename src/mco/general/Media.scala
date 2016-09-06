@@ -9,7 +9,5 @@ trait Media[M[_]] {
 }
 
 object Media {
-  trait Companion[M[_]] {
-    def apply(entity: String): M[Option[Media[M]]]
-  }
+  trait Companion[M[_]] extends (String => M[Option[Media[M]]])
 }

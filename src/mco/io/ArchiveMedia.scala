@@ -9,11 +9,9 @@ import mco.utils.WhenOperator._
 final class ArchiveMedia private (val path: Path) extends Media[Files.IO] {
   override val key = path.fileName
 
-  override def readContent = asArchive(path) map {_.files.map(_.path).toSet}
+  override def readContent = archiveEntries(path)
 
-  override def copy(map: Map[String, String]) =
-    for (arch <- asArchive(path))
-      yield arch.extractSome(e => when (map contains e.path) { Paths.get(map(e.path)) })
+  override def copy(map: Map[String, String]) = extract(path, map.mapValues(Path(_)))
 }
 
 object ArchiveMedia extends Media.Companion[IO] {

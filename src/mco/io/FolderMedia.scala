@@ -10,7 +10,7 @@ final class FolderMedia private (val path: Path) extends Media[IO] {
   override val key = path.fileName
 
   override def readContent = for (descendants <- descendantsOf(path)) yield {
-    descendants map {_ relativeTo path asString} toSet
+    descendants map {_ relativeToS path} toSet
   }
 
   override def copy(m: Map[String, String]) =

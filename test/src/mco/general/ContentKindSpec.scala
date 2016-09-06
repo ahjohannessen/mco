@@ -1,8 +1,7 @@
-package mco
-package core
 package mco.general
 
 import ContentKind._
+import mco.UnitSpec
 
 class ContentKindSpec extends UnitSpec {
   "ContentKind.Garbage" should "allow overriding non-garbage" in {

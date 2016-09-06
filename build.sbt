@@ -2,7 +2,6 @@ name := "mco"
 version := "0.1"
 scalaVersion := "2.11.8"
 
-
 crossPaths := false
 
 val src = baseDirectory(_ / "src")
@@ -10,7 +9,7 @@ sourceDirectory in Compile <<= src
 scalaSource in Compile     <<= src
 javaSource in Compile      <<= src
 
-val testSrc = baseDirectory(_ / "test" / "srcZZ")
+val testSrc = baseDirectory(_ / "test" / "src")
 sourceDirectory in Test <<= testSrc
 scalaSource in Test     <<= testSrc
 javaSource in Test      <<= testSrc
