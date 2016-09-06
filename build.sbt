@@ -1,6 +1,5 @@
 name := "mco"
 version := "0.1"
-scalaOrganization := "org.typelevel"
 scalaVersion := "2.11.8"
 
 
@@ -35,4 +34,4 @@ libraryDependencies ++=
     , "net.sf.sevenzipjbinding" % "sevenzipjbinding-all-windows" % "9.20-2.00beta"
   )
 
-scalacOptions ++= Seq("-feature", "-deprecation", "-Y")
+scalacOptions ++= Seq("-feature", "-deprecation")

@@ -10,6 +10,7 @@ object Files {
   case class Path(impure: File) {
     def relativeTo(other: Path) = Path(other.impure.relativize(impure))
     def asString = impure.pathAsString
+    def fileName = impure.name
     def /(right: String) = Path(impure / right)
   }
 
@@ -49,20 +50,21 @@ object Files {
   def copy(source: Path, dest: Path)           = liftF(Copy(source, dest))
   def move(source: Path, dest: Path)           = liftF(Move(source, dest))
 
-  object UnsafeIO extends (FileOperationA ~> Id) {
+  private object UnsafeIO extends (FileOperationA ~> Id) {
+    @inline final def discard[A](a: => A): Unit = { a; () }
     override def apply[A](fa: FileOperationA[A]): Id[A] = {
       val result = fa match {
         case ChildrenOf(path) => path.impure.children.map(Path).toStream
         case DescendantsOf(path) => path.impure.listRecursively.map(Path).toStream
-        case RemoveFile(path) => path.impure.delete()
+        case RemoveFile(path) => discard { if (path.impure.exists) path.impure.delete() }
         case IsRegularFile(path) => path.impure.isRegularFile
         case IsDirectory(path) => path.impure.isDirectory
         case AsArchive(path) => Archive(path.impure.path)
         case ReadBytes(path) => path.impure.byteArray
-        case SetContent(path, cnt) => path.impure.write(cnt)(File.OpenOptions.default)
-        case CreateDirectory(path) => path.impure.createDirectories()
-        case Copy(source, dest) => source.impure.copyTo(dest.impure, overwrite = true)
-        case Move(source, dest) => source.impure.moveTo(dest.impure, overwrite = true)
+        case SetContent(path, cnt) => discard { path.impure.write(cnt)(File.OpenOptions.default) }
+        case CreateDirectory(path) => discard { path.impure.createDirectories() }
+        case Copy(source, dest) => discard { source.impure.copyTo(dest.impure, overwrite = true) }
+        case Move(source, dest) => discard { source.impure.moveTo(dest.impure, overwrite = true) }
       }
       result.asInstanceOf[A]
     }

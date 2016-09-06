@@ -1,5 +1,7 @@
 package mco.io
 
+import scala.language.postfixOps
+
 import mco.general._
 import Files._
 import cats.data.{Xor, XorT}
@@ -13,21 +15,22 @@ class IsolatedRepo private (source: Source[IO], target: Path, known: Map[String,
   override def state = ()
 
   override def apply(key: String) = known(key)._1
-  override def packages = known.values map { case (pkg, _) => pkg }
+  override lazy val packages = known.values.map{ case (pkg, _) => pkg }
   override def change(oldKey: String, upd: Package): IO[Repo] = {
     def onChange(body: IsolatedRepo => Boolean)(action: IsolatedRepo => IO[IsolatedRepo]) =
-      (s: IsolatedRepo) => if (body(s)) action(s) else IO.pure(s)
+      (s: IsolatedRepo) => if (body(s)) action(s) else IO pure s
 
     val key = upd.key
+    println(s"${apply(oldKey).copy(contents = Set())} --> ${upd.copy(contents = Set())}")
 
-    val result: IO[IsolatedRepo] = IO.pure(this) flatMap
-      onChange(_ => oldKey != key)(_.rename(oldKey, key)) flatMap
-      onChange(_(key).contents != upd.contents)(_.reselect(upd)) flatMap
+    val result: IO[IsolatedRepo] = { IO pure this } flatMap
+      onChange(_ => oldKey != key)(_ rename (oldKey, key)) flatMap
+      onChange(_(key).contents != upd.contents)(_ reselect upd) flatMap
       onChange(r => r(key).isInstalled != upd.isInstalled) {
-        r => if (!upd.isInstalled) r.install(key) else r.uninstall(key)
+        r => if (upd.isInstalled) r install key else r uninstall key
       }
 
-    result map (r => r: Repo)
+    IO widen result
   }
 
   def rename(oldKey: String, newKey: String): IO[IsolatedRepo] = for {
@@ -63,11 +66,9 @@ class IsolatedRepo private (source: Source[IO], target: Path, known: Map[String,
       _ <- removeFile(targetDir)
       _ <- createDirectory(targetDir)
 
-      installable = nextContents.filter(_.isInstalled).map(_.key)
+      installable = nextContents.filter(_.isInstalled).map(c => c.key -> (targetDir / c.key).asString)
 
-      _ <- IO.traverse(installable) { key =>
-        media.copy(key)((targetDir / key).asString)
-      }
+      _ <- media.copy(installable.toMap)
       nextPkg = pkg.copy(contents = nextContents, isInstalled = true)
       nextKnown = known.updated(pkg.key, (nextPkg, media))
     } yield new IsolatedRepo(source, target, nextKnown)

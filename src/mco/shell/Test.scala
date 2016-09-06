@@ -2,6 +2,8 @@ package mco.shell
 
 import cats.data.OptionT
 import mco.io._
+import Files._
+import mco.general.Repository
 
 object Test extends App {
 //  val src = FolderSource(
@@ -24,9 +26,26 @@ object Test extends App {
 //
 ////  val printio = io.map(r => r.all mkString "\n").map(println)
 //
-//  val start = System.nanoTime()
 //  IO.unsafePerform(io)
-//  println("END: ", System.nanoTime() - start)
 
-  val src = OptionT(FolderSource("E:\\Documents\\EA Games\\The Sims 2\\__mco_instance__\\installers",SimpleClassifier, ArchiveMedia, FolderMedia))
+  val start = System.nanoTime()
+
+  val srcIO = FolderSource("E:\\Documents\\EA Games\\The Sims 2\\__mco_instance__\\installers",
+    SimpleClassifier, ArchiveMedia, FolderMedia).map(_.get)
+
+  val res = for {
+    src <- srcIO
+    repo <- IsolatedRepo(
+      src,
+      Path("E:\\__tmp__\\tempdir"),
+      ()
+    )
+    pkgs = repo.packages.slice(0, 40).map(_.key).toList
+    _ = println(repo.packages.slice(0, 40).map(_.isInstalled))
+    rr <- pkgs.foldM[IO, Repository.Aux[IO, Path, Unit]](repo)((repo, key) => repo.change(key, repo(key).copy(isInstalled = true)))
+  } yield rr.packages.slice(0, 40).map(_.isInstalled).toList
+
+  println(unsafePerformIO(res))
+  println(s"Took ${(System.nanoTime() - start) / 1000 / 1000}ms")
+
 }
