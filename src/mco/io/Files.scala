@@ -7,16 +7,24 @@ import cats.free.Free.liftF
 import com.olegpy.schive.Archive
 
 object Files {
-  case class Path(impure: File) {
-    def relativeTo(other: Path) = Path(other.impure.relativize(impure))
+  case class Path(str: String) {
+    val normalized = str.replace('\\', '/')
+    def impure = File(str)
     def relativeToS(other: Path) = other.impure.relativize(impure).toString
-    def asString = impure.pathAsString
-    def fileName = impure.name
-    def /(right: String) = Path(impure / right)
+    def asString = str
+    def fileName = normalized.drop(normalized.indexOf("/") + 1)
+    def /(right: String) = Path(s"$normalized/$right")
+
+    override def equals(other: Any): Boolean = other match {
+      case p: Path => normalized == p.normalized
+      case _ => false
+    }
+
+    override def hashCode(): Int = normalized.hashCode()
   }
 
-  object Path extends (File => Path) {
-    def apply(s: String): Path = apply(File(s))
+  object Path extends (String => Path) {
+    def apply(s: File): Path = apply(s.pathAsString)
   }
 
   object Ast {
@@ -59,8 +67,8 @@ object Files {
   def unsafePerformIO[A](program: IO[A]): A = program.foldMap(new (FileOperationA ~> Id) {
     override def apply[B](fa: FileOperationA[B]): Id[B] = {
       val result = fa match {
-        case ChildrenOf(path) => path.impure.children.map(Path).toStream
-        case DescendantsOf(path) => path.impure.listRecursively.map(Path).toStream
+        case ChildrenOf(path) => path.impure.children.map(Path(_)).toStream
+        case DescendantsOf(path) => path.impure.listRecursively.map(Path(_)).toStream
         case RemoveFile(path) => discard { if (path.impure.exists) path.impure.delete() }
         case IsRegularFile(path) => path.impure.isRegularFile
         case IsDirectory(path) => path.impure.isDirectory
