@@ -1,8 +1,9 @@
 package mco.io
 
 import cats.data.Xor._
+import cats.syntax.option._
 import mco.UnitSpec
-import Files._
+import mco.io.files._
 import mco.io.IOInterpreters._
 import mco.io.IOInterpreters.FSDsl._
 import Stubs._

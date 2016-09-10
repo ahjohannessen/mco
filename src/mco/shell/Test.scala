@@ -1,9 +1,12 @@
 package mco.shell
 
 import mco.general.Repository
-import mco.io.Files._
+import mco.io.files.{Path, IO, unsafePerformIO}
+import cats.syntax.foldable._
+import cats.instances.list._
 import mco.io._
 
+//noinspection TypeAnnotation
 object Test extends App {
 //  val src = FolderSource(
 //    File("E:\\Documents\\EA Games\\The Sims 2\\__mco_instance__\\installers"),

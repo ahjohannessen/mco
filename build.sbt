@@ -20,6 +20,7 @@ resourceDirectory in Compile <<= baseDirectory(_ / "resources")
 resourceDirectory in Test  <<= baseDirectory(_ / "test" / "resources")
 
 resolvers += "jitpack" at "https://jitpack.io"
+resolvers += Resolver.jcenterRepo
 
 libraryDependencies ++=
   Seq(
@@ -28,6 +29,7 @@ libraryDependencies ++=
 
     "org.typelevel" %% "cats" % "0.7.2",
     "org.typelevel" %% "alleycats-core" % "0.1.6",
+    "com.thangiee" %% "freasy-monad" % "0.1.0",
 
     "com.typesafe" % "config" % "1.3.0",
     "com.github.pathikrit" %% "better-files" % "2.16.0",
@@ -52,6 +54,8 @@ scalacOptions ++= Seq(
   "-Xfuture",
   "-Ywarn-unused-import"
 )
+
+addCompilerPlugin("org.scalamacros" % "paradise_2.11.8" % "2.1.0")
 
 val openReport = TaskKey[Unit]("open-report")
 openReport := {

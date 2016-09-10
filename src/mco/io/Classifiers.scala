@@ -1,7 +1,7 @@
 package mco.io
 
 import mco.general._
-import mco.io.Files._
+import mco.io.files.ops._
 
 object Classifiers {
   val customizable: Classifier[IO] = Classifier[IO](_ => ContentKind.Mod())

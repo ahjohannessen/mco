@@ -2,8 +2,9 @@ package mco.io
 
 import better.files.File
 import mco.UnitSpec
-import Files._
+import mco.io.files.{IO, Path, ops, unsafePerformIO}
 import IOInterpreters._
+import mco.general.Media
 
 class ArchiveMediaSpec extends UnitSpec {
   "ArchiveMedia companion" should "create media for .7z, .rar and .zip archives" in {
@@ -33,7 +34,7 @@ class ArchiveMediaSpec extends UnitSpec {
   }
 
   val testArchive = File(getClass.getResource("/test_archive.rar").toURI)
-  def testMedia() = unsafePerformIO(ArchiveMedia(testArchive.pathAsString)).get
+  def testMedia(): Media[IO] = unsafePerformIO(ArchiveMedia(testArchive.pathAsString)).get
 
   "ArchiveMedia#readContent" should "list archived files" in {
     val media = testMedia()
@@ -44,6 +45,6 @@ class ArchiveMediaSpec extends UnitSpec {
     val media = testMedia()
     val map = Map("file1" -> "fileZ")
     val op = media.copy(map)
-    lastOperation(op) shouldBe Ast.Extract(Path(testArchive), map.mapValues(Path(_)))
+    lastOperation(op) shouldBe ops.OperationsADT.Extract(Path(testArchive), map.mapValues(Path(_)))
   }
 }

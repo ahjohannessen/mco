@@ -2,8 +2,9 @@ package mco.io
 
 import better.files.File
 import mco.UnitSpec
-import Files._
+import mco.io.files.{IO, Path, ops, unsafePerformIO}
 import IOInterpreters._
+import mco.general.Media
 
 class FolderMediaSpec extends UnitSpec {
   "FolderMedia companion" should "create media for folders" in {
@@ -26,7 +27,7 @@ class FolderMediaSpec extends UnitSpec {
   }
 
   val testFolder = File(getClass.getResource("/test_folder").toURI)
-  def testMedia() = unsafePerformIO(FolderMedia(testFolder.pathAsString))
+  def testMedia(): Option[Media[IO]] = unsafePerformIO(FolderMedia(testFolder.pathAsString))
 
   "FolderMedia#readContent" should "list contained files with their hashes" in {
     val media = testMedia().get
@@ -36,6 +37,6 @@ class FolderMediaSpec extends UnitSpec {
   "FolderMedia#readData" should "load contained file contents" in {
     val media = testMedia().get
     val op = media.copy(Map("file1" -> "fileZ"))
-    lastOperation(op) shouldBe Ast.Copy(Path(testFolder / "file1"), Path("fileZ"))
+    lastOperation(op) shouldBe ops.OperationsADT.CopyTree(Path(testFolder / "file1"), Path("fileZ"))
   }
 }

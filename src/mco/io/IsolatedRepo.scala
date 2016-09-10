@@ -1,8 +1,11 @@
 package mco.io
 
 import mco.general._
-import Files._
+import mco.io.files.Path
+import mco.io.files.ops._
 import cats.data.{Xor, XorT}
+import cats.instances.stream._
+import cats.syntax.applicative._
 
 
 class IsolatedRepo private (source: Source[IO], target: Path, known: Map[String, (Package, Media[IO])]) extends Repository[IO, Path] {
@@ -19,7 +22,7 @@ class IsolatedRepo private (source: Source[IO], target: Path, known: Map[String,
 
     val key = upd.key
 
-    val result: IO[IsolatedRepo] = { IO pure this } flatMap
+    val result: IO[IsolatedRepo] = { this.pure[IO] } flatMap
       onChange(_ => oldKey != key)(_ rename (oldKey, key)) flatMap
       onChange(_(key).contents != upd.contents)(_ reselect upd) flatMap
       onChange(r => r(key).isInstalled != upd.isInstalled) {
@@ -30,7 +33,7 @@ class IsolatedRepo private (source: Source[IO], target: Path, known: Map[String,
   }
 
   def rename(oldKey: String, newKey: String): IO[IsolatedRepo] = for {
-    _ <- move(target / oldKey, target / newKey)
+    _ <- moveTree(target / oldKey, target / newKey)
     newSource <- source.rename(oldKey, newKey)
     newKnown = known - oldKey + (newKey -> known(newKey))
   } yield new IsolatedRepo(newSource, target, newKnown)
@@ -42,7 +45,7 @@ class IsolatedRepo private (source: Source[IO], target: Path, known: Map[String,
     def updated(r: IsolatedRepo) = {
       val (pkg, media) = known(upd.key)
       val newKnown = known.updated(upd.key, (pkg.copy(contents = nextContents), media))
-      IO.pure(new IsolatedRepo(source, target, newKnown))
+      new IsolatedRepo(source, target, newKnown).pure[IO]
     }
 
     if (apply(upd.key).isInstalled) for {
@@ -103,12 +106,12 @@ object IsolatedRepo extends Repository.Companion[IO, Path, Unit] {
   override def apply(source: Source[IO], target: Path, state: Unit): IO[Repo] =
     for {
       packages <- source.list
-      updated <- IO.sequence(packages map {statusFromExisting(target) _}.tupled)
+      updated <- IO.traverse(packages)({statusFromExisting(target) _}.tupled)
     } yield new IsolatedRepo(source, target, updated.toMap)
 
   private def statusFromExisting(target: Path)(pkg: Package, media: Media[IO]) = for {
     exists <- isDirectory(target / pkg.key)
-    fileExists <- if (exists) media.readContent else IO.pure((_: String) => false)
+    fileExists <- if (exists) media.readContent else ((_: String) => false).pure[IO]
     updatedContent = pkg.contents.map(c => c.copy(isInstalled = fileExists(c.key)))
   } yield pkg.key -> (pkg.copy(contents = updatedContent, isInstalled = exists) -> media)
 

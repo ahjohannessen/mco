@@ -1,8 +1,10 @@
 package mco.io
 
 import mco.general.Media
-import mco.io.Files.{IO, Path}
+import mco.io.files.Path
+import mco.io.files.ops._
 import org.scalacheck.Arbitrary
+import cats.syntax.applicative._
 
 object Stubs {
   def media(mappings: (String, Set[String])*) = new Media.Companion[IO] {
