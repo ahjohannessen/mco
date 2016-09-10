@@ -15,12 +15,14 @@ object Files {
     def fileName = normalized.drop(normalized.indexOf("/") + 1)
     def /(right: String) = Path(s"$normalized/$right")
 
+    // $COVERAGE-OFF$Equals-hashcode is by contract, even though it's not used in all cases
     override def equals(other: Any): Boolean = other match {
       case p: Path => normalized == p.normalized
       case _ => false
     }
 
     override def hashCode(): Int = normalized.hashCode()
+    // $COVERAGE-ON$
   }
 
   object Path extends (String => Path) {

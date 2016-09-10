@@ -9,10 +9,10 @@ class IsolatedRepo private (source: Source[IO], target: Path, known: Map[String,
   import IsolatedRepo.{Repo, XorTIO}
 
   override type State = Unit
-  override def state = ()
+  override def state: Unit = ()
 
-  override def apply(key: String) = known(key)._1
-  override lazy val packages = known.values.map{ case (pkg, _) => pkg }
+  override def apply(key: String): Package = known(key)._1
+  override lazy val packages: Traversable[Package] = known.values.map{ case (pkg, _) => pkg }
   override def change(oldKey: String, upd: Package): IO[Repo] = {
     def onChange(body: IsolatedRepo => Boolean)(action: IsolatedRepo => IO[IsolatedRepo]) =
       (s: IsolatedRepo) => if (body(s)) action(s) else IO pure s
@@ -35,7 +35,7 @@ class IsolatedRepo private (source: Source[IO], target: Path, known: Map[String,
     newKnown = known - oldKey + (newKey -> known(newKey))
   } yield new IsolatedRepo(newSource, target, newKnown)
 
-  def reselect(upd: Package) = {
+  private def reselect(upd: Package) = {
     val nextContents = upd.contents
     require(nextContents.map(_.key) == apply(upd.key).contents.map(_.key))
 
@@ -53,7 +53,7 @@ class IsolatedRepo private (source: Source[IO], target: Path, known: Map[String,
     else updated(this)
   }
 
-  def install(key: String) = {
+  private def install(key: String) = {
     val targetDir = target / key
     val (pkg, media) = known(key)
     val nextContents = for (content <- pkg.contents) yield
@@ -70,7 +70,7 @@ class IsolatedRepo private (source: Source[IO], target: Path, known: Map[String,
     } yield new IsolatedRepo(source, target, nextKnown)
   }
 
-  def uninstall(key: String) = {
+  private def uninstall(key: String) = {
     val targetDir = target / key
     val (pkg, media) = known(key)
     val nextContents = for (content <- pkg.contents) yield content.copy(isInstalled = false)
@@ -81,7 +81,7 @@ class IsolatedRepo private (source: Source[IO], target: Path, known: Map[String,
     } yield new IsolatedRepo(source, target, nextKnown)
   }
 
-  override def add(f: String) = {
+  override def add(f: String): IO[Xor[String, Repo]] = {
     for {
       nextSource <- XorTIO(source add f)
       nextElements <- XorTIO.liftT(nextSource.list)
@@ -89,7 +89,7 @@ class IsolatedRepo private (source: Source[IO], target: Path, known: Map[String,
     } yield new IsolatedRepo (nextSource, target, known + (f -> t)): Repo
   }.value
 
-  override def remove(s: String) = {
+  override def remove(s: String): IO[Xor[String, Repo]] = {
     val pkg = apply(s)
     if (pkg.isInstalled) change(s, pkg.copy(isInstalled = false)) flatMap {_.remove(s)}
     else XorTIO(source remove s)
@@ -114,7 +114,7 @@ object IsolatedRepo extends Repository.Companion[IO, Path, Unit] {
 
   type XorTIO[A] = XorT[IO, String, A]
   object XorTIO {
-    def apply[A](x: IO[String Xor A]) = XorT[IO, String, A](x)
-    def liftT[A](x: IO[A]) = XorT.liftT[IO, String, A](x)
+    def apply[A](x: IO[String Xor A]): XorT[IO, String, A] = XorT(x)
+    def liftT[A](x: IO[A]): XorT[IO, String, A] = XorT.liftT(x)
   }
 }

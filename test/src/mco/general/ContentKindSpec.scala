@@ -5,8 +5,8 @@ import mco.UnitSpec
 
 class ContentKindSpec extends UnitSpec {
   "ContentKind.Garbage" should "allow overriding non-garbage" in {
-    for (kind <- Seq(Mod(true), Mod(false), Asset, Doc)) noException shouldBe thrownBy {
-      Garbage(Some(kind))
+    for (kind <- Seq(Mod(true), Mod(false), Asset, Doc)) {
+      Garbage(Some(kind)).isInstallable shouldEqual kind.isInstallable
     }
   }
 

@@ -1,8 +1,8 @@
 package mco.shell
 
-import mco.io._
-import Files._
 import mco.general.Repository
+import mco.io.Files._
+import mco.io._
 
 object Test extends App {
 //  val src = FolderSource(
@@ -30,7 +30,7 @@ object Test extends App {
   val start = System.nanoTime()
 
   val srcIO = FolderSource("E:\\Documents\\EA Games\\The Sims 2\\__mco_instance__\\installers",
-    SimpleClassifier, ArchiveMedia, FolderMedia).map(_.get)
+    Classifiers.customizable, ArchiveMedia, FolderMedia).map(_.get)
 
   val res = for {
     src <- srcIO

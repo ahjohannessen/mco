@@ -1,3 +1,5 @@
+import java.awt.Desktop
+
 name := "mco"
 version := "0.1"
 scalaVersion := "2.11.8"
@@ -45,8 +47,17 @@ scalacOptions ++= Seq(
   "-Ywarn-dead-code",
   "-Ywarn-numeric-widen",
   "-Ywarn-value-discard",
-  "-Xfatal-warnings",
+//  "-Xfatal-warnings",
   "-Xlint",
   "-Xfuture",
   "-Ywarn-unused-import"
 )
+
+val openReport = TaskKey[Unit]("open-report")
+openReport := {
+  Desktop.getDesktop.browse(file("target/scoverage-report/index.html").toURI)
+}
+
+commands += Command.command("showCoverage") { state =>
+  "clean" :: "coverage" :: "test" :: "coverageReport" :: "openReport" :: state
+}
