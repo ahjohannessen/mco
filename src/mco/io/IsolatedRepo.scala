@@ -6,6 +6,7 @@ import mco.io.files.ops._
 import cats.data.{Xor, XorT}
 import cats.instances.stream._
 import cats.syntax.applicative._
+import cats.syntax.functor._
 
 
 class IsolatedRepo private (source: Source[IO], target: Path, known: Map[String, (Package, Media[IO])]) extends Repository[IO, Path] {
@@ -29,7 +30,7 @@ class IsolatedRepo private (source: Source[IO], target: Path, known: Map[String,
         r => if (upd.isInstalled) r install key else r uninstall key
       }
 
-    IO widen result
+    result.widen
   }
 
   def rename(oldKey: String, newKey: String): IO[IsolatedRepo] = for {
@@ -65,7 +66,9 @@ class IsolatedRepo private (source: Source[IO], target: Path, known: Map[String,
       _ <- removeFile(targetDir)
       _ <- createDirectory(targetDir)
 
-      installable = nextContents.filter(_.isInstalled).map(c => c.key -> (targetDir / c.key).asString)
+      installable = nextContents
+        .filter(_.isInstalled)
+        .map(c => c.key -> (targetDir / c.key).asString)
 
       _ <- media.copy(installable.toMap)
       nextPkg = pkg.copy(contents = nextContents, isInstalled = true)
