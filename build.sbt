@@ -11,13 +11,13 @@ sourceDirectory in Compile <<= src
 scalaSource in Compile     <<= src
 javaSource in Compile      <<= src
 
-val testSrc = baseDirectory(_ / "test" / "src")
+val testSrc = baseDirectory(_ / "test")
 sourceDirectory in Test <<= testSrc
 scalaSource in Test     <<= testSrc
 javaSource in Test      <<= testSrc
 
 resourceDirectory in Compile <<= baseDirectory(_ / "resources")
-resourceDirectory in Test  <<= baseDirectory(_ / "test" / "resources")
+resourceDirectory in Test    <<= baseDirectory(_ / "fixtures")
 
 resolvers += "jitpack" at "https://jitpack.io"
 resolvers += Resolver.jcenterRepo
