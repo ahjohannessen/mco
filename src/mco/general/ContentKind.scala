@@ -6,18 +6,15 @@ sealed trait ContentKind {
     case Mod(enabled) => enabled
     case Asset => true
     case Doc => false
-    case Garbage(ov) => ov.exists(_.isInstallable)
+    case Garbage => false
   }
 }
 
 object ContentKind {
-  case class  Mod(enabled: Boolean = true)                    extends ContentKind
-  case object Asset                                           extends ContentKind
-  case object Doc                                             extends ContentKind
-  case class  Garbage(`override`: Option[ContentKind] = None) extends ContentKind {
-    require(`override` collect { case g: Garbage => false } getOrElse true,
-      "Garbage cannot be overridden with garbage")
-  }
+  case class  Mod(enabled: Boolean = true) extends ContentKind
+  case object Asset                        extends ContentKind
+  case object Doc                          extends ContentKind
+  case object Garbage                      extends ContentKind
 }
 
 
