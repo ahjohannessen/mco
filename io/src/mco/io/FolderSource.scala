@@ -3,13 +3,13 @@ package mco.io
 import cats.data.{OptionT, Xor}
 import cats.syntax.xor._
 import cats.syntax.traverse._
+import cats.syntax.option._
 import cats.instances.stream._
 import cats.instances.vector._
 import mco._
 import mco.Media.Companion
 import mco.io.files.Path
 import mco.io.files.ops._
-import mco.utils.WhenOperator._
 
 final class FolderSource private (path: Path, media: Path => IO[Option[(mco.Package, Media[IO])]]) extends Source[IO] {
 
@@ -31,12 +31,11 @@ final class FolderSource private (path: Path, media: Path => IO[Option[(mco.Pack
 object FolderSource {
   def apply(f: String, classifier: Classifier[IO], medias: Media.Companion[IO]*): IO[Option[FolderSource]] = for {
     isDir <- isDirectory(Path(f))
-  } yield when (isDir) {
-    new FolderSource(
+  } yield
+    if (isDir) new FolderSource(
       Path(f),
       p => mediaGenerator(medias.toVector, classifier, p.asString).value
-    )
-  }
+    ).some else none
 
   private def mediaGenerator(factories: Vector[Companion[IO]],
                              classifier: Classifier[IO],

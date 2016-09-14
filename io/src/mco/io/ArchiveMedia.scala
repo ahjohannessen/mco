@@ -3,7 +3,7 @@ package mco.io
 import mco.Media
 import mco.io.files.Path
 import mco.io.files.ops._
-import mco.utils.WhenOperator._
+import cats.syntax.option._
 
 final class ArchiveMedia private (val path: Path) extends Media[IO] {
   override val key: String = path.fileName
@@ -17,5 +17,6 @@ object ArchiveMedia extends Media.Companion[IO] {
   override def apply(path: String): IO[Option[Media[IO]]] = for {
     isFile <- isRegularFile(Path(path))
     extensionSupported = supportedExtensions exists { path.endsWith }
-  } yield when (isFile && extensionSupported) { new ArchiveMedia(Path(path)): Media[IO] }
+  } yield if (isFile && extensionSupported) { new ArchiveMedia(Path(path)): Media[IO] }.some
+          else none
 }

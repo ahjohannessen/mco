@@ -4,7 +4,7 @@ import scala.language.postfixOps
 
 import mco.io.files.Path
 import mco.io.files.ops._
-import mco.utils.WhenOperator._
+import cats.syntax.option._
 import cats.instances.vector._
 import mco.Media
 
@@ -23,5 +23,7 @@ final class FolderMedia private (val path: Path) extends Media[IO] {
 
 object FolderMedia extends Media.Companion[IO] {
   override def apply(path: String): IO[Option[Media[IO]]] =
-    for (isDir <- isDirectory(Path(path))) yield when (isDir) { new FolderMedia(Path(path)) }
+    for (isDir <- isDirectory(Path(path))) yield
+      if (isDir) { new FolderMedia(Path(path)) }.some
+      else none
 }
