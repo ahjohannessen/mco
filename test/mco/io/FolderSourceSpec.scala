@@ -20,7 +20,7 @@ class FolderSourceSpec extends UnitSpec {
     "target" -> dir()
   )
 
-  private val classifier = Classifiers.noncustomizable
+  private val classifier = Classifiers.disableAll
 
   private val run = StubIORunner(stub)
 
@@ -37,14 +37,14 @@ class FolderSourceSpec extends UnitSpec {
   "FolderSource#list" should "list objects created using provided media & classifier" in {
     import Classifiers._
     val media1 = media("storage/archive.zip" -> randoms)
-    val Some(src1) = run.value(FolderSource("storage", noncustomizable, media1))
+    val Some(src1) = run.value(FolderSource("storage", disableAll, media1))
     val Some(expectedMedia1) = run.value(media1("storage/archive.zip"))
-    run.value(src1.list).loneElement._1 shouldEqual run.value(noncustomizable(expectedMedia1))
+    run.value(src1.list).loneElement._1 shouldEqual run.value(disableAll(expectedMedia1))
 
     val media2 = media("storage/folder" -> randoms)
-    val Some(src2) = run.value(FolderSource("storage", customizable, media2))
+    val Some(src2) = run.value(FolderSource("storage", enableAll, media2))
     val Some(expectedMedia2) = run.value(media2("storage/folder"))
-    run.value(src2.list).loneElement._1 shouldEqual run.value(customizable(expectedMedia2))
+    run.value(src2.list).loneElement._1 shouldEqual run.value(enableAll(expectedMedia2))
   }
 
   "FolderSource#add" should "pull file or folder from filesystem & source" in {

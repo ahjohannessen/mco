@@ -33,7 +33,7 @@ object Test extends App {
   val start = System.nanoTime()
 
   val srcIO = FolderSource("E:\\Documents\\EA Games\\The Sims 2\\__mco_instance__\\installers",
-    Classifiers.customizable, ArchiveMedia, FolderMedia).map(_.get)
+    Classifiers.enableAll, ArchiveMedia, FolderMedia).map(_.get)
 
   val res = for {
     src <- srcIO

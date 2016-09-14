@@ -2,7 +2,6 @@ package mco.io
 
 import cats.data.{OptionT, Xor}
 import mco.UnitSpec
-import mco.general.ContentKind.Mod
 import mco.general.{Content, ContentKind, Package}
 import mco.io.IOInterpreters.FSDsl._
 import mco.io.Stubs._
@@ -28,7 +27,7 @@ class IsolatedRepoSpec extends UnitSpec {
 
   "IsolatedRepo companion" should "create a repository given a folder" in {
     val repoOpt = for {
-      src <- OptionT(FolderSource("source", Classifiers.customizable))
+      src <- OptionT(FolderSource("source", Classifiers.enableAll))
       repo <- OptionT.liftF(IsolatedRepo(src, Path("target"), ()))
     } yield repo
 
@@ -38,7 +37,7 @@ class IsolatedRepoSpec extends UnitSpec {
   private def repo = {
     val repoOptIO = for {
       src <- OptionT(FolderSource(
-        "source", Classifiers.customizable, media(
+        "source", Classifiers.enableAll, media(
           "source/package1" -> Set("content1"),
           "source/renamed" -> Set("content1")
         ))
@@ -59,7 +58,7 @@ class IsolatedRepoSpec extends UnitSpec {
   "IsolatedRepo #apply & #packages" should "provide package information" in {
     repo("package1") shouldEqual Package(
       "package1",
-      Set(Content("content1", ContentKind.Mod(enabled = true), isInstalled = true)),
+      Set(Content("content1", ContentKind.Mod, isInstalled = true)),
       isInstalled = true
     )
 
@@ -107,7 +106,7 @@ class IsolatedRepoSpec extends UnitSpec {
   }
 
   it should "update status of every package content" in {
-    val disableAll = repo("package1").contents map { _.copy(kind = Mod(enabled = false)) }
+    val disableAll = repo("package1").contents map { _.copy(kind = ContentKind.Garbage) }
     val changeIO = repo.change("package1", _.copy(contents = disableAll))
     val (state, nextRepo) = io(changeIO)
 
