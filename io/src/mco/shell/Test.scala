@@ -1,9 +1,9 @@
 package mco.shell
 
-import mco.general.Repository
-import mco.io.files.{Path, IO, unsafePerformIO}
+import mco.io.files.{IO, Path, unsafePerformIO}
 import cats.syntax.foldable._
 import cats.instances.list._
+import mco.Repository
 import mco.io._
 
 //noinspection TypeAnnotation

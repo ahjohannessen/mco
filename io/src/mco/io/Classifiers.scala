@@ -1,6 +1,6 @@
 package mco.io
 
-import mco.general._
+import mco._
 import mco.io.files.ops._
 
 object Classifiers {

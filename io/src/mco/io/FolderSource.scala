@@ -5,13 +5,13 @@ import cats.syntax.xor._
 import cats.syntax.traverse._
 import cats.instances.stream._
 import cats.instances.vector._
-import mco.general.Media.Companion
-import mco.general.{Classifier, Media, Package, Source}
+import mco._
+import mco.Media.Companion
 import mco.io.files.Path
 import mco.io.files.ops._
 import mco.utils.WhenOperator._
 
-final class FolderSource private (path: Path, media: Path => IO[Option[(Package, Media[IO])]]) extends Source[IO] {
+final class FolderSource private (path: Path, media: Path => IO[Option[(mco.Package, Media[IO])]]) extends Source[IO] {
 
   override def rename(from: String, to: String): IO[Source[IO]] =
     for (_ <- moveTree(path / from, path / to)) yield new FolderSource(path, media)
@@ -22,7 +22,7 @@ final class FolderSource private (path: Path, media: Path => IO[Option[(Package,
   override def remove(s: String): IO[String Xor Source[IO]] =
     for (_ <- removeFile(path / s)) yield new FolderSource(path, media).right
 
-  override val list: IO[Stream[(Package, Media[IO])]] = for {
+  override val list: IO[Stream[(mco.Package, Media[IO])]] = for {
     children <- childrenOf(path)
     rr <- children traverse media
   } yield rr.flatten
@@ -43,6 +43,6 @@ object FolderSource {
                              path: String) =
       for {
         media <- OptionT[IO, Media[IO]](IO.traverse(factories)(_(path)).map(_.flatten.headOption))
-        pkg <- OptionT.liftF[IO, Package](classifier(media))
+        pkg <- OptionT.liftF[IO, mco.Package](classifier(media))
       } yield (pkg, media)
 }

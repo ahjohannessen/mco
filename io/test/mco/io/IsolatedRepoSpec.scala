@@ -1,8 +1,7 @@
 package mco.io
 
 import cats.data.{OptionT, Xor}
-import mco.UnitSpec
-import mco.general.{Content, ContentKind, Package}
+import mco._
 import mco.io.IOInterpreters.FSDsl._
 import mco.io.Stubs._
 import mco.io.files.Path

@@ -1,10 +1,9 @@
 package mco.io
 
 import better.files.File
-import mco.UnitSpec
+import mco.{Media, UnitSpec}
 import mco.io.files.{IO, Path, ops, unsafePerformIO}
 import IOInterpreters._
-import mco.general.Media
 
 class ArchiveMediaSpec extends UnitSpec {
   "ArchiveMedia companion" should "create media for .7z, .rar and .zip archives" in {

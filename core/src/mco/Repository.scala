@@ -1,4 +1,4 @@
-package mco.general
+package mco
 
 import scala.language.higherKinds
 

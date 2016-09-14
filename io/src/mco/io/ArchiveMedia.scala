@@ -1,6 +1,6 @@
 package mco.io
 
-import mco.general.Media
+import mco.Media
 import mco.io.files.Path
 import mco.io.files.ops._
 import mco.utils.WhenOperator._

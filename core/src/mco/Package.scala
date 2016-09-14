@@ -1,5 +1,4 @@
-package mco.general
-
+package mco
 
 case class Package
 (

@@ -1,4 +1,4 @@
-package mco.general
+package mco
 
 sealed trait ContentKind {
   import ContentKind._

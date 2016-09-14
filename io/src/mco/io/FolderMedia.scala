@@ -2,11 +2,11 @@ package mco.io
 
 import scala.language.postfixOps
 
-import mco.general.Media
 import mco.io.files.Path
 import mco.io.files.ops._
 import mco.utils.WhenOperator._
 import cats.instances.vector._
+import mco.Media
 
 final class FolderMedia private (val path: Path) extends Media[IO] {
   override val key: String = path.fileName
