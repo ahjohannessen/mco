@@ -36,7 +36,10 @@ class IsolatedRepo private (source: Source[IO], target: Path, known: Map[String,
   def rename(oldKey: String, newKey: String): IO[IsolatedRepo] = for {
     _ <- moveTree(target / oldKey, target / newKey)
     newSource <- source.rename(oldKey, newKey)
-    newKnown = known - oldKey + (newKey -> known(newKey))
+    (pkg, _) = known(oldKey)
+    newMedias <- newSource.list
+    media = newMedias.collect { case (_, m) if m.key == newKey => m } .head
+    newKnown = known - oldKey + { (newKey, (pkg.copy(key = newKey), media)) }
   } yield new IsolatedRepo(newSource, target, newKnown)
 
   private def reselect(upd: Package) = {

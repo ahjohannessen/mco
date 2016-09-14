@@ -12,6 +12,9 @@ trait Repository[M[_], T] {
   def apply(key: String): Package
   def packages: Traversable[Package]
 
+  final def change(oldKey: String, update: Package => Package): M[Repository.Aux[M, T, State]] =
+    change(oldKey, update(apply(oldKey)))
+
   def change(oldKey: String, updates: Package): M[Repository.Aux[M, T, State]]
 
   def add(f: String): M[String Xor Repository.Aux[M, T, State]]

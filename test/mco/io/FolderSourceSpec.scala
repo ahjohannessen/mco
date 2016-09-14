@@ -22,7 +22,7 @@ class FolderSourceSpec extends UnitSpec {
 
   private val classifier = Classifiers.noncustomizable
 
-  private val run = StubRun(stub)
+  private val run = StubIORunner(stub)
 
   "FolderSource companion" should "create source given directory" in {
     val io = FolderSource("storage", classifier)
@@ -61,11 +61,11 @@ class FolderSourceSpec extends UnitSpec {
     val Some(src) = run.value(FolderSource("storage", classifier, media("storage/folder" -> emptys, "storage/archive.zip" -> emptys)))
     val (state, Right(value)) = run(src remove "folder")
     deepGet(Path("storage/folder"))(state) shouldBe empty
-    StubRun(state).value(value.list).loneElement._1.key shouldBe "archive.zip"
+    StubIORunner(state).value(value.list).loneElement._1.key shouldBe "archive.zip"
 
-    val (state2, Right(value2)) = StubRun(state)(value remove "archive.zip")
+    val (state2, Right(value2)) = StubIORunner(state)(value remove "archive.zip")
     deepGet(Path("storage/archive.zip"))(state2) shouldBe empty
-    StubRun(state2).value(value2.list) shouldBe empty
+    StubIORunner(state2).value(value2.list) shouldBe empty
   }
 
   "FolderSource#rename" should "rename file or folder on disk" in {
