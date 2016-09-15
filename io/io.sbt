@@ -10,7 +10,7 @@ libraryDependencies ++=
     "com.github.pathikrit" %% "better-files" % "2.16.0",
     "org.slf4j" % "slf4j-simple" % "1.7.21",
     "com.github.oleg-py" %% "schive" % "-SNAPSHOT",
-    "net.sf.sevenzipjbinding" % "sevenzipjbinding-all-windows" % "9.20-2.00beta"
+    "net.sf.sevenzipjbinding" % "sevenzipjbinding-all-platforms" % "9.20-2.00beta"
   )
 
 addCompilerPlugin("org.scalamacros" % "paradise_2.11.8" % "2.1.0")
