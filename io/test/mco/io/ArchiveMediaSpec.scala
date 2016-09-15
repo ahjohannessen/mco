@@ -33,7 +33,8 @@ class ArchiveMediaSpec extends UnitSpec {
   }
 
   val testArchive = File(getClass.getResource("/test_archive.rar").toURI)
-  def testMedia(): Media[IO] = unsafePerformIO(ArchiveMedia(testArchive.pathAsString)).get
+  def testMedia(): Media[IO] = unsafePerformIO(ArchiveMedia(testArchive.pathAsString))
+    .getOrElse(fail("Failed to create archive media"))
 
   "ArchiveMedia#readContent" should "list archived files" in {
     val media = testMedia()

@@ -29,7 +29,7 @@ object IOInterpreters {
   def lastOperation[A](io: IO[A]): OperationsADT[_] = io.foldMap(new (OperationsADT ~> IOLastOp) {
     override def apply[B](fa: OperationsADT[B]): IOLastOp[B] =
       State(_ => (fa, empties.interpreter(fa)))
-  }).runS(null).value
+  }).runS(null).value // TODO remove this weird way of testing implementation
 
   sealed trait FileSystemObject
   case class Dir(contents: Map[String, FileSystemObject]) extends FileSystemObject
@@ -107,7 +107,7 @@ object IOInterpreters {
 
       override def extract(path: Path, ft: Map[String, Path]): FStub[Unit] =  for {
         o <- State.inspect(deepGet(path))
-        contents = o.get.asInstanceOf[Arc].dir.contents
+        contents = o.getOrElse(err).asInstanceOf[Arc].dir.contents
         archived = contents.keySet
         toExtract = ft.filterKeys(archived)
         result = toExtract.map({case (k, p) => State.modify(deepSet(p, contents(k).some))})
@@ -125,12 +125,12 @@ object IOInterpreters {
 
       override def copyTree(source: Path, dest: Path): FStub[Unit] = for {
         sourceCopy <- State.inspect(deepGet(source))
-        _ <- State.modify(deepSet(dest, sourceCopy.get.some))
+        _ <- State.modify(deepSet(dest, sourceCopy orElse err))
       } yield ()
 
       override def moveTree(source: Path, dest: Path): FStub[Unit] = for {
         sourceCopy <- State.inspect(deepGet(source))
-        _ <- State.modify(deepSet(dest, sourceCopy.get.some))
+        _ <- State.modify(deepSet(dest, sourceCopy orElse err))
         _ <- State.modify(deepSet(source, none))
       } yield ()
     }

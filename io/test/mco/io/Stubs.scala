@@ -28,8 +28,5 @@ object Stubs {
 
   val emptys: Set[String] = Set.empty
 
-  def randoms: Set[String] = implicitly[Arbitrary[Set[String]]].arbitrary
-    .filter(_.nonEmpty)
-    .sample
-    .get
+  val randoms: Set[String] = Set("aa", "текст", "01", "夢")
 }

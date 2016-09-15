@@ -29,12 +29,12 @@ class FolderMediaSpec extends UnitSpec {
   def testMedia(): Option[Media[IO]] = unsafePerformIO(FolderMedia(testFolder.pathAsString))
 
   "FolderMedia#readContent" should "list contained files with their hashes" in {
-    val media = testMedia().get
+    val media = testMedia() getOrElse fail("Could not create media")
     unsafePerformIO(media.readContent) shouldEqual Set("file1", "file2", "file3")
   }
 
   "FolderMedia#readData" should "load contained file contents" in {
-    val media = testMedia().get
+    val media = testMedia() getOrElse fail("Could not create media")
     val op = media.copy(Map("file1" -> "fileZ"))
     lastOperation(op) shouldBe ops.OperationsADT.CopyTree(Path(testFolder / "file1"), Path("fileZ"))
   }

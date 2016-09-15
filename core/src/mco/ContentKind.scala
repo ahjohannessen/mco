@@ -1,10 +1,9 @@
 package mco
 
 sealed trait ContentKind {
-  import ContentKind._
   def isInstallable: Boolean = this match {
-    case Mod => true
-    case Doc | Garbage => false
+    case ContentKind.Mod => true
+    case ContentKind.Doc | ContentKind.Garbage => false
   }
 }
 

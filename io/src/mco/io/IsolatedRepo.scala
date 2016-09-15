@@ -38,7 +38,9 @@ class IsolatedRepo private (source: Source[IO], target: Path, known: Map[String,
     newSource <- source.rename(oldKey, newKey)
     (pkg, _) = known(oldKey)
     newMedias <- newSource.list
-    media = newMedias.collect { case (_, m) if m.key == newKey => m } .head
+    media = newMedias
+      .collect { case (_, m) if m.key == newKey => m }
+      .headOption getOrElse sys.error("Source#rename contract violation")
     newKnown = known - oldKey + { (newKey, (pkg.copy(key = newKey), media)) }
   } yield new IsolatedRepo(newSource, target, newKnown)
 

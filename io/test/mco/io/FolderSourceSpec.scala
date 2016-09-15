@@ -7,6 +7,7 @@ import mco.io.files._
 import mco.io.IOInterpreters._
 import mco.io.IOInterpreters.FSDsl._
 import Stubs._
+import Classifiers._
 
 class FolderSourceSpec extends UnitSpec {
   private val stub = fs(
@@ -35,7 +36,6 @@ class FolderSourceSpec extends UnitSpec {
   }
 
   "FolderSource#list" should "list objects created using provided media & classifier" in {
-    import Classifiers._
     val media1 = media("storage/archive.zip" -> randoms)
     val Some(src1) = run.value(FolderSource("storage", disableAll, media1))
     val Some(expectedMedia1) = run.value(media1("storage/archive.zip"))
