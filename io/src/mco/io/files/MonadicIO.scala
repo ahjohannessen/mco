@@ -4,6 +4,7 @@ import cats._
 import cats.free.Free
 import freasymonad.free
 
+// $COVERAGE-OFF$Macro-generated code
 @free sealed trait MonadicIO {
   type IO[A] = Free[OperationsADT, A]
   def IO: Monad[IO] with RecursiveTailRecM[IO] = implicitly
@@ -22,3 +23,4 @@ import freasymonad.free
   def copyTree(source: Path, dest: Path)         : IO[Unit]
   def moveTree(source: Path, dest: Path)         : IO[Unit]
 }
+// $COVERAGE-ON
