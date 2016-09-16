@@ -1,7 +1,6 @@
 package mco.io
 
 import cats.data.State
-import cats.{Id, ~>}
 import cats.syntax.option._
 import cats.syntax.traverse._
 import cats.instances.list._
@@ -9,28 +8,6 @@ import mco.io.files.ops._
 import mco.io.files.{MonadicIO, Path}
 
 object IOInterpreters {
-  type IOLastOp[A] = State[OperationsADT[_], A]
-
-  def empties[R] = new MonadicIO.Interp[Id] {
-    override def childrenOf(path: Path): Stream[Path] = Stream.empty
-    override def descendantsOf(path: Path): Stream[Path] = Stream.empty
-    override def removeFile(path: Path): Unit = ()
-    override def isRegularFile(path: Path): Boolean = false
-    override def isDirectory(path: Path): Boolean = false
-    override def archiveEntries(path: Path): Set[String] = Set.empty
-    override def extract(path: Path, ft: Map[String, Path]): Unit = ()
-    override def readBytes(path: Path): Array[Byte] = Array.emptyByteArray
-    override def setContent(path: Path, cnt: Array[Byte]): Unit = ()
-    override def createDirectory(path: Path): Unit = ()
-    override def copyTree(source: Path, dest: Path): Unit = ()
-    override def moveTree(source: Path, dest: Path): Unit = ()
-  }
-
-  def lastOperation[A](io: IO[A]): OperationsADT[_] = io.foldMap(new (OperationsADT ~> IOLastOp) {
-    override def apply[B](fa: OperationsADT[B]): IOLastOp[B] =
-      State(_ => (fa, empties.interpreter(fa)))
-  }).runS(null).value // TODO remove this weird way of testing implementation
-
   sealed trait FileSystemObject
   case class Dir(contents: Map[String, FileSystemObject]) extends FileSystemObject
   case class Obj(data: Array[Byte]) extends FileSystemObject

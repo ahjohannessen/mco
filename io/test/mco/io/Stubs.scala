@@ -2,13 +2,12 @@ package mco.io
 
 import mco.io.files.Path
 import mco.io.files.ops._
-import org.scalacheck.Arbitrary
 import cats.syntax.applicative._
 import cats.instances.vector._
 import mco.Media
 
 object Stubs {
-  def media(mappings: (String, Set[String])*) = new Media.Companion[IO] {
+  def media(mappings: (String, Set[String])*): Media.Companion[IO] = new Media.Companion[IO] {
     private val map = mappings.toMap
 
     class MediaStub(path: Path, cnt: Set[String]) extends Media[IO] {

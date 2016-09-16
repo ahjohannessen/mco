@@ -4,6 +4,7 @@ import better.files.File
 import mco.{Media, UnitSpec}
 import mco.io.files.{IO, Path, ops, unsafePerformIO}
 import IOInterpreters._
+import IOInterpreters.FSDsl._
 
 class ArchiveMediaSpec extends UnitSpec {
   "ArchiveMedia companion" should "create media for .7z, .rar and .zip archives" in {
@@ -36,15 +37,22 @@ class ArchiveMediaSpec extends UnitSpec {
   def testMedia(): Media[IO] = unsafePerformIO(ArchiveMedia(testArchive.pathAsString))
     .getOrElse(fail("Failed to create archive media"))
 
+  def pureTestMedia: (Dir, Media[IO]) = {
+    val state = fs("seed.zip" -> arc("file1" -> obj()))
+    val media = StubIORunner(state)
+      .value(ArchiveMedia("seed.zip"))
+      .getOrElse(fail("Could not create media"))
+    (state, media)
+  }
+
   "ArchiveMedia#readContent" should "list archived files" in {
     val media = testMedia()
     unsafePerformIO(media.readContent) shouldEqual Set("file1", "file2", "file3")
   }
 
   "ArchiveMedia#readData" should "load archived file contents" in {
-    val media = testMedia()
-    val map = Map("file1" -> "fileZ")
-    val op = media.copy(map)
-    lastOperation(op) shouldBe ops.OperationsADT.Extract(Path(testArchive), map.mapValues(Path(_)))
+    val (state, media) = pureTestMedia
+    val io = media.copy(Map("file1" -> "fileZ"))
+    deepGet(Path("fileZ"))(StubIORunner(state).state(io)) shouldEqual Some(obj())
   }
 }

@@ -4,6 +4,7 @@ import better.files.File
 import mco.{Media, UnitSpec}
 import mco.io.files.{IO, Path, ops, unsafePerformIO}
 import IOInterpreters._
+import IOInterpreters.FSDsl._
 
 class FolderMediaSpec extends UnitSpec {
   "FolderMedia companion" should "create media for folders" in {
@@ -28,14 +29,23 @@ class FolderMediaSpec extends UnitSpec {
   val testFolder = File(getClass.getResource("/test_folder").toURI)
   def testMedia(): Option[Media[IO]] = unsafePerformIO(FolderMedia(testFolder.pathAsString))
 
+  private def pureTestMedia: (Dir, Media[IO]) = {
+    val state = fs("seed" -> dir("file1" -> obj(), "file2" -> obj()))
+    val media = StubIORunner(state)
+      .value(FolderMedia("seed"))
+      .getOrElse(fail("Could not create media"))
+    (state, media)
+  }
+
   "FolderMedia#readContent" should "list contained files with their hashes" in {
     val media = testMedia() getOrElse fail("Could not create media")
     unsafePerformIO(media.readContent) shouldEqual Set("file1", "file2", "file3")
   }
 
   "FolderMedia#readData" should "load contained file contents" in {
-    val media = testMedia() getOrElse fail("Could not create media")
+    val (state, media) = pureTestMedia
     val op = media.copy(Map("file1" -> "fileZ"))
-    lastOperation(op) shouldBe ops.OperationsADT.CopyTree(Path(testFolder / "file1"), Path("fileZ"))
+    val result = StubIORunner(state).state(op)
+    deepGet(Path("fileZ"))(result) shouldBe Some(obj())
   }
 }
