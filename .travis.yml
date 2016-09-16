@@ -5,8 +5,8 @@ scala:
 jdk:
   - oraclejdk8
 
-before_script:
-  - sbt coverage
+script:
+  - sbt clean coverage test
 
 after_script:
   - sbt coverageReport
