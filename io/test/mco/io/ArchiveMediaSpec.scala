@@ -2,7 +2,7 @@ package mco.io
 
 import better.files.File
 import mco.{Media, UnitSpec}
-import mco.io.files.{IO, Path, ops, unsafePerformIO}
+import mco.io.files.{IO, Path, unsafePerformIO}
 import IOInterpreters._
 import IOInterpreters.FSDsl._
 
