@@ -27,7 +27,7 @@ class IsolatedRepoSpec extends UnitSpec {
   "IsolatedRepo companion" should "create a repository given a folder" in {
     val repoOpt = for {
       src <- OptionT(FolderSource("source", Classifiers.enableAll))
-      repo <- OptionT.liftF(IsolatedRepo(src, Path("target"), ()))
+      repo <- OptionT.liftF(IsolatedRepo(src, "target", Set()))
     } yield repo
 
     io.value(repoOpt.value) should not be empty
@@ -41,7 +41,7 @@ class IsolatedRepoSpec extends UnitSpec {
           "source/renamed" -> Set("content1")
         ))
       )
-      repo <- OptionT.liftF(IsolatedRepo(src, Path("target"), ()))
+      repo <- OptionT.liftF(IsolatedRepo(src, "target", Set()))
     } yield repo
     io value repoOptIO.value getOrElse fail("Expected repository to create successfully")
   }
@@ -50,8 +50,8 @@ class IsolatedRepoSpec extends UnitSpec {
     repo("package1") shouldBe 'installed
   }
 
-  "IsolatedRepo#state" should "just be Unit" in {
-    repo.state shouldBe {}
+  "IsolatedRepo#state" should "simply contain package state" in {
+    repo.state should contain theSameElementsAs repo.packages
   }
 
   "IsolatedRepo #apply & #packages" should "provide package information" in {

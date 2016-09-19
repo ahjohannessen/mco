@@ -1,5 +1,7 @@
 package mco.io
 
+import scala.collection.immutable.SortedSet
+
 import mco._
 import mco.io.files.Path
 import mco.io.files.ops._
@@ -9,17 +11,21 @@ import cats.syntax.applicative._
 import cats.syntax.functor._
 
 
-class IsolatedRepo private (source: Source[IO], target: Path, known: Map[String, (Package, Media[IO])]) extends Repository[IO, Path] {
+class IsolatedRepo private (source: Source[IO], target: Path, known: Map[String, (Package, Media[IO])]) extends Repository[IO] {
   import IsolatedRepo.{Repo, XorTIO}
 
-  override type State = Unit
-  override def state: Unit = ()
+  override type State = Set[Package]
+
+  override def state: State = packages
 
   override def apply(key: String): Package = known(key)._1
-  override lazy val packages: Traversable[Package] = known.values.map{ case (pkg, _) => pkg }
+
+  override lazy val packages: SortedSet[Package] =
+    known.values.map {case (pkg, _) => pkg } (collection.breakOut)
+
   override def change(oldKey: String, upd: Package): IO[Repo] = {
     def onChange(body: IsolatedRepo => Boolean)(action: IsolatedRepo => IO[IsolatedRepo]) =
-      (s: IsolatedRepo) => if (body(s)) action(s) else IO pure s
+      (s: IsolatedRepo) => if (body(s)) action(s) else s.pure[IO]
 
     val key = upd.key
 
@@ -109,13 +115,18 @@ class IsolatedRepo private (source: Source[IO], target: Path, known: Map[String,
   }
 }
 
-object IsolatedRepo extends Repository.Companion[IO, Path, Unit] {
-  private type Repo = Repository.Aux[IO, Path, Unit]
-  override def apply(source: Source[IO], target: Path, state: Unit): IO[Repo] =
+object IsolatedRepo extends Repository.Companion[IO, Set[Package]] {
+  private type Repo = Repository.Aux[IO, Set[Package]]
+  override def apply(source: Source[IO], target: String, state: Set[Package]): IO[Repo] =
     for {
-      packages <- source.list
-      updated <- IO.traverse(packages)({statusFromExisting(target) _}.tupled)
-    } yield new IsolatedRepo(source, target, updated.toMap)
+      existing <- source.list
+      updated <- IO.traverse(existing)({statusFromExisting(Path(target)) _}.tupled)
+      known = state.map(p => p.key -> p).toMap.filterKeys(existing.contains)
+      repos = updated.map {
+        case (key, (pkg, media)) if known contains key => (key, (known(key), media))
+        case tuple: Any => tuple
+      }
+    } yield new IsolatedRepo(source, Path(target), repos.toMap): Repo
 
   private def statusFromExisting(target: Path)(pkg: Package, media: Media[IO]) = for {
     exists <- isDirectory(target / pkg.key)

@@ -4,7 +4,7 @@ import scala.language.higherKinds
 
 import cats.data.Xor
 
-trait Repository[M[_], T] {
+trait Repository[M[_]] {
   type State
 
   def state: State
@@ -12,18 +12,18 @@ trait Repository[M[_], T] {
   def apply(key: String): Package
   def packages: Traversable[Package]
 
-  final def change(oldKey: String, update: Package => Package): M[Repository.Aux[M, T, State]] =
+  final def change(oldKey: String, update: Package => Package): M[Repository.Aux[M, State]] =
     change(oldKey, update(apply(oldKey)))
 
-  def change(oldKey: String, updates: Package): M[Repository.Aux[M, T, State]]
+  def change(oldKey: String, updates: Package): M[Repository.Aux[M, State]]
 
-  def add(f: String): M[String Xor Repository.Aux[M, T, State]]
-  def remove(s: String): M[String Xor Repository.Aux[M, T, State]]
+  def add(f: String): M[String Xor Repository.Aux[M, State]]
+  def remove(s: String): M[String Xor Repository.Aux[M, State]]
 }
 
 object Repository {
-  type Aux[M[_], T, S] = Repository[M, T] { type State = S }
-  trait Companion[M[_], T, S] {
-    def apply(source: Source[M], target: T, state: S): M[Repository.Aux[M, T, S]]
+  type Aux[M[_], S] = Repository[M] { type State = S }
+  trait Companion[M[_], S] {
+    def apply(source: Source[M], target: String, state: S): M[Repository.Aux[M, S]]
   }
 }
