@@ -1,6 +1,6 @@
 package mco
 
-sealed trait ContentKind {
+sealed trait ContentKind extends Product with Serializable {
   def isInstallable: Boolean = this match {
     case ContentKind.Mod => true
     case ContentKind.Doc | ContentKind.Garbage => false
