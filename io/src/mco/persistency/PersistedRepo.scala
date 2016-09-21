@@ -19,12 +19,12 @@ final class PersistedRepo[M[_]: Functor, S](wrapped: Repository[M, S])
   override def packages: Traversable[Package] = wrapped.packages
 
   private def recordUpdate(next: Repository[M, S]) = {
-    (Update(wrapped.state, wrapped.state): StoreOp[S], new PersistedRepo(next).widen)
+    (Update(wrapped.state, next.state): StoreOp[S], new PersistedRepo(next).widen)
   }
 
   private def recordXorUpdate(xor: Fail Xor Repository[M, S]): (StoreOp[S], Xor[Fail, Self]) =
     xor.fold(
-      fail => (NoOp, Xor.left(fail)),
+      fail => (NoOp(wrapped.state), Xor.left(fail)),
       repo => recordUpdate(repo) bimap (identity, Xor.right)
     )
 

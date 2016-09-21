@@ -9,6 +9,8 @@ libraryDependencies ++= Seq(
   "com.thangiee" %% "freasy-monad" % "0.2.0",
   "com.chuusai" %% "shapeless" % "2.3.2",
 
+  "com.propensive" %% "rapture-json-jawn" % "2.0.0-M7",
+
   "com.h2database" % "h2" % "1.4.192",
   "org.tpolecat" %% "doobie-core-cats" % "0.3.1-SNAPSHOT",
 
