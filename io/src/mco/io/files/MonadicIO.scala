@@ -1,13 +1,13 @@
 package mco.io.files
 
-import cats._
+import cats.Monad
 import cats.free.Free
 import freasymonad.free
 
 // $COVERAGE-OFF$Macro-generated code
 @free sealed trait MonadicIO {
   type IO[A] = Free[OperationsADT, A]
-  def IO: Monad[IO] with RecursiveTailRecM[IO] = implicitly
+  def IO: Monad[IO] = implicitly
   sealed trait OperationsADT[A]
 
   def childrenOf(path: Path)                     : IO[Stream[Path]]

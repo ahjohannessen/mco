@@ -2,28 +2,25 @@ package mco.io
 
 import scala.collection.immutable.SortedSet
 
-import mco._
-import mco.io.files.Path
-import mco.io.files.ops._
-import cats.data.{Xor, XorT}
+import cats.data.Xor
 import cats.instances.stream._
 import cats.syntax.applicative._
 import cats.syntax.functor._
+import mco._
+import mco.io.files.ops._
+import mco.io.files.{Path, UnsafeIO}
 
 
-class IsolatedRepo private (source: Source[IO], target: Path, known: Map[String, (Package, Media[IO])]) extends Repository[IO] {
-  import IsolatedRepo.{Repo, XorTIO}
+class IsolatedRepo private (source: Source[IO], target: Path, known: Map[String, (Package, Media[IO])]) extends Repository[IO, Set[Package]] {
 
-  override type State = Set[Package]
-
-  override def state: State = packages
+  override def state: Set[Package] = packages
 
   override def apply(key: String): Package = known(key)._1
 
   override lazy val packages: SortedSet[Package] =
     known.values.map {case (pkg, _) => pkg } (collection.breakOut)
 
-  override def change(oldKey: String, upd: Package): IO[Repo] = {
+  override def change(oldKey: String, upd: Package): IO[Self] = {
     def onChange(body: IsolatedRepo => Boolean)(action: IsolatedRepo => IO[IsolatedRepo]) =
       (s: IsolatedRepo) => if (body(s)) action(s) else s.pure[IO]
 
@@ -39,7 +36,7 @@ class IsolatedRepo private (source: Source[IO], target: Path, known: Map[String,
     result.widen
   }
 
-  def rename(oldKey: String, newKey: String): IO[IsolatedRepo] = for {
+  private def rename(oldKey: String, newKey: String): IO[IsolatedRepo] = for {
     _ <- moveTree(target / oldKey, target / newKey)
     newSource <- source.rename(oldKey, newKey)
     (pkg, _) = known(oldKey)
@@ -98,26 +95,25 @@ class IsolatedRepo private (source: Source[IO], target: Path, known: Map[String,
     } yield new IsolatedRepo(source, target, nextKnown)
   }
 
-  override def add(f: String): IO[Xor[String, Repo]] = {
+  override def add(f: String): IO[Fail Xor Self] = {
     for {
-      nextSource <- XorTIO(source add f)
-      nextElements <- XorTIO.liftT(nextSource.list)
+      nextSource <- UnsafeIO(source add f)
+      nextElements <- UnsafeIO.liftT(nextSource.list)
       Some(t) = nextElements find { case (pkg, _) => pkg.key == f }
-    } yield new IsolatedRepo (nextSource, target, known + (f -> t)): Repo
+    } yield new IsolatedRepo (nextSource, target, known + (f -> t)).widen
   }.value
 
-  override def remove(s: String): IO[Xor[String, Repo]] = {
+  override def remove(s: String): IO[Fail Xor Self] = {
     val pkg = apply(s)
     if (pkg.isInstalled) change(s, pkg.copy(isInstalled = false)) flatMap {_.remove(s)}
-    else XorTIO(source remove s)
-      .map(nextSource => new IsolatedRepo(nextSource, target, known - s) : Repo)
+    else UnsafeIO(source remove s)
+      .map(nextSource => new IsolatedRepo(nextSource, target, known - s).widen)
       .value
   }
 }
 
 object IsolatedRepo extends Repository.Companion[IO, Set[Package]] {
-  private type Repo = Repository.Aux[IO, Set[Package]]
-  override def apply(source: Source[IO], target: String, state: Set[Package]): IO[Repo] =
+  override def apply(source: Source[IO], target: String, state: Set[Package]): IO[Repository[IO, Set[Package]]] =
     for {
       existing <- source.list
       updated <- IO.traverse(existing)({statusFromExisting(Path(target)) _}.tupled)
@@ -126,17 +122,11 @@ object IsolatedRepo extends Repository.Companion[IO, Set[Package]] {
         case (key, (pkg, media)) if known contains key => (key, (known(key), media))
         case tuple: Any => tuple
       }
-    } yield new IsolatedRepo(source, Path(target), repos.toMap): Repo
+    } yield new IsolatedRepo(source, Path(target), repos.toMap): Repository[IO, Set[Package]]
 
   private def statusFromExisting(target: Path)(pkg: Package, media: Media[IO]) = for {
     exists <- isDirectory(target / pkg.key)
     fileExists <- if (exists) media.readContent else ((_: String) => false).pure[IO]
     updatedContent = pkg.contents.map(c => c.copy(isInstalled = fileExists(c.key)))
   } yield pkg.key -> (pkg.copy(contents = updatedContent, isInstalled = exists) -> media)
-
-  type XorTIO[A] = XorT[IO, String, A]
-  object XorTIO {
-    def apply[A](x: IO[String Xor A]): XorT[IO, String, A] = XorT(x)
-    def liftT[A](x: IO[A]): XorT[IO, String, A] = XorT.liftT(x)
-  }
 }
