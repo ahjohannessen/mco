@@ -8,6 +8,7 @@ import rapture.json._, jsonBackends.jawn._
 import JsonStorage._
 
 // $COVERAGE-OFF$Silly demo runner
+
 //noinspection TypeAnnotation
 object Test extends App {
   val start = System.nanoTime()
