@@ -5,8 +5,8 @@ import better.files.File
 
 case class Path(str: String) {
   val normalized: String = str.replace('\\', '/')
-  private[files] def f: File = File(str)
-  def relativeToS(other: Path): String = other.f.relativize(f).toString
+  private[io] def f: File = File(str)
+  def relativeToS(other: Path): String = other.f.relativize(f).toString.replace('\\', '/')
   def asString: String = str
   def fileName: String = normalized.drop(normalized.lastIndexOf("/") + 1)
   def /(right: String): Path = Path(s"$normalized/$right")

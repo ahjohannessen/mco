@@ -10,19 +10,22 @@ import mco.io.files.{MonadicIO, Path}
 object IOInterpreters {
   sealed trait FileSystemObject
   case class Dir(contents: Map[String, FileSystemObject]) extends FileSystemObject
-  case class Obj(data: Array[Byte]) extends FileSystemObject
+  case class Obj(data: Vector[Byte]) extends FileSystemObject
   case class Arc(dir: Dir) extends FileSystemObject
 
   object FSDsl {
     def fs(seq: (String, FileSystemObject)*): Dir = Dir(seq.toMap)
     def dir(seq: (String, FileSystemObject)*): FileSystemObject = Dir(seq.toMap)
-    def obj(data: Array[Byte] = Array.emptyByteArray): FileSystemObject = Obj(data)
+    def obj(data: Vector[Byte] = Vector.empty): FileSystemObject = Obj(data)
+    def obj(data: Array[Byte]): FileSystemObject = Obj(data.toVector)
     def arc(seq: (String, FileSystemObject)*): FileSystemObject = Arc(Dir(seq.toMap))
 
     type FStub[A] = State[Dir, A]
 
-    def rget(d: FileSystemObject): Stream[Path] = d match {
-      case Dir(m) => m.keys.map(Path(_)).toStream #::: m.values.flatMap(rget).toStream
+    def rget(prefix: String)(d: FileSystemObject): Stream[String] = d match {
+      case Dir(m) =>
+        m.keys.map(prefix + _).toStream #::: m
+          .flatMap { case (key, fso) => rget(prefix + key + "/")(fso)}.toStream
       case _ => Stream.Empty
     }
 
@@ -31,10 +34,10 @@ object IOInterpreters {
         .asString
         .split(Array('\\', '/'))
         .foldLeft((o: FileSystemObject).some) { (x, y) =>
-        x match {
-          case Some(Dir(m)) => m.get(y)
-          case _ => none
-        }
+          x match {
+            case Some(Dir(m)) => m.get(y)
+            case _ => none
+          }
       }
 
     def err: Nothing = sys.error("Incorrect stub fs access")
@@ -62,8 +65,9 @@ object IOInterpreters {
           case _ => err
         })
 
-      override def descendantsOf(path: Path): FStub[Stream[Path]] =
-        State.inspect(deepGet(path)(_: Dir).map(rget).getOrElse(Stream.Empty))
+      override def descendantsOf(path: Path): FStub[Stream[Path]] = State.inspect(
+        deepGet(path)(_: Dir).map(rget("")).map(s => s.map(path / _)).getOrElse(Stream.Empty)
+      )
 
       override def removeFile(path: Path): FStub[Unit] = State.modify(deepSet(path, none))
 
@@ -78,7 +82,7 @@ object IOInterpreters {
       })
 
       override def archiveEntries(path: Path): FStub[Set[String]] = State.inspect({deepGet(path) _} andThen {
-        case Some(Arc(ch)) => rget(ch).map(_.asString).toSet
+        case Some(Arc(ch)) => rget("")(ch).toSet
         case _ => err
       })
 
@@ -92,7 +96,7 @@ object IOInterpreters {
       } yield ()
 
       override def readBytes(path: Path): FStub[Array[Byte]] = State.inspect({deepGet(path) _} andThen {
-        case Some(Obj(data)) => data
+        case Some(Obj(data)) => data.toArray
         case _ => err
       })
 
