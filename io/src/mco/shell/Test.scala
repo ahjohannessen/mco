@@ -1,7 +1,7 @@
 package mco.shell
 
 import mco.io._
-import mco.io.files.ops._
+//import mco.io.files.ops._
 import mco.io.files.{Path, unsafePerformIO}
 import mco.persistency.{JsonStorage, Read, Update}
 import rapture.json._, jsonBackends.jawn._

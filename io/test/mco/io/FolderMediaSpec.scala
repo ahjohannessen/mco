@@ -1,6 +1,5 @@
 package mco.io
 
-import better.files.File
 import mco.{Media, UnitSpec}
 import mco.io.files.{IO, Path, unsafePerformIO}
 import IOInterpreters._
