@@ -12,6 +12,8 @@ case class Update[A] (old: A, next: A) extends StoreOp[A]
 case object Read extends StoreOp[Nothing]
 case class NoOp[A](a: A) extends StoreOp[A]
 
+// $COVERAGE-OFF$Macro-generated code
 @typeclass trait Separatable[A] {
   def delta(old: A, next: A): Delta[A]
 }
+// $COVERAGE-ON
