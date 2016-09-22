@@ -7,6 +7,7 @@ import mco.persistency.{JsonStorage, Read, Update}
 import rapture.json._, jsonBackends.jawn._
 import JsonStorage._
 
+// $COVERAGE-OFF$Silly demo runner
 //noinspection TypeAnnotation
 object Test extends App {
   val start = System.nanoTime()
@@ -36,3 +37,4 @@ object Test extends App {
   println(unsafePerformIO(res))
   println(s"Took ${(System.nanoTime() - start) / 1000 / 1000}ms")
 }
+// $COVERAGE-ON
