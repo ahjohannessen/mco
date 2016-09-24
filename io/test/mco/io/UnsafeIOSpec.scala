@@ -33,6 +33,12 @@ class UnsafeIOSpec extends fixture.FlatSpec with Matchers {
     }
   }
 
+  it should "do nothing if nothing exists at given path" in { dir =>
+    noException should be thrownBy {
+      removeFile(dir / "does" / "not" / "exist")
+    }
+  }
+
   "UnsafeIOInterpreter#isRegularFile" should "correctly check if path represents a file" in { dir =>
     isRegularFile(dir / "test_folder") shouldBe false
     isRegularFile(dir / "test_folder" / "file1") shouldBe true

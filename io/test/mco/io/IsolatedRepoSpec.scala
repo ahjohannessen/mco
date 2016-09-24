@@ -12,6 +12,10 @@ class IsolatedRepoSpec extends UnitSpec {
     "source" -> dir(
       "package1" -> dir(
         "file.txt" -> obj()
+      ),
+      "package2" -> dir(
+        "readme.txt" -> obj(),
+        "toInstall.txt" -> obj()
       )
     ),
     "target" -> dir(
@@ -22,7 +26,7 @@ class IsolatedRepoSpec extends UnitSpec {
     "renamed" -> obj()
   )
 
-  val io = StubIORunner(stub)
+  private val io = StubIORunner(stub)
 
   "IsolatedRepo companion" should "create a repository given a folder" in {
     val repoOpt = for {
@@ -38,16 +42,25 @@ class IsolatedRepoSpec extends UnitSpec {
       src <- OptionT(FolderSource(
         "source", Classifiers.enableAll, media(
           "source/package1" -> Set("content1"),
+          "source/package2" -> Set("readme.txt", "toInstall.txt"),
           "source/renamed" -> Set("content1")
         ))
       )
-      repo <- OptionT.liftF(IsolatedRepo(src, "target", Set()))
+      repo <- OptionT.liftF(IsolatedRepo(src, "target", Set(Package(
+        "package2",
+        Set(Content("readme.txt", ContentKind.Doc), Content("toInstall.txt", ContentKind.Mod))
+      ))))
     } yield repo
     io value repoOptIO.value getOrElse fail("Expected repository to create successfully")
   }
 
   it should "preload created repository with existing data" in {
     repo("package1") shouldBe 'installed
+    repo("package2") should not be 'installed
+  }
+
+  it should "load additional data from state" in {
+    repo("package2").contents should contain (Content("readme.txt", ContentKind.Doc))
   }
 
   "IsolatedRepo#state" should "simply contain package state" in {
@@ -61,20 +74,20 @@ class IsolatedRepoSpec extends UnitSpec {
       isInstalled = true
     )
 
-    repo.packages should contain theSameElementsAs Seq(repo("package1"))
+    repo.packages should contain theSameElementsAs Seq(repo("package1"), repo("package2"))
   }
 
   "IsolatedRepo#add" should "push object to file system and create a package from it" in {
     val addIO = repo add "renamed"
     val (state, Xor.Right(nextRepo)) = io(addIO)
-    nextRepo.packages.map(_.key) should contain theSameElementsAs Seq("package1", "renamed")
+    nextRepo.packages.map(_.key) should contain theSameElementsAs Seq("package1", "package2", "renamed")
     deepGet(Path("source/renamed"))(state) should not be empty
   }
 
   "IsolatedRepo#remove" should "remove object from fs and its package" in {
     val removeIO = repo remove "package1"
     val (state, Xor.Right(nextRepo)) = io(removeIO)
-    nextRepo.packages shouldBe empty
+    nextRepo.packages.loneElement.key shouldBe "package2"
     deepGet(Path("source/package1"))(state) shouldBe empty
     deepGet(Path("target/package1"))(state) shouldBe empty
   }
@@ -84,8 +97,9 @@ class IsolatedRepoSpec extends UnitSpec {
     val (state, nextRepo) = io(changeIO)
 
     nextRepo.packages.find(_.key == "package1") shouldBe empty
-    nextRepo.packages.loneElement.key shouldEqual "renamed"
-    nextRepo.packages.loneElement shouldBe 'installed
+    nextRepo.packages.map(_.key) should contain ("renamed")
+    nextRepo.packages.map(_.key) should not contain "package1"
+    nextRepo("renamed") shouldBe 'installed
 
     deepGet(Path("target/package1"))(state) shouldBe empty
     deepGet(Path("target/renamed/content1"))(state) shouldEqual Some(obj())
@@ -104,12 +118,24 @@ class IsolatedRepoSpec extends UnitSpec {
     nextRepo2("package1") shouldBe 'installed
   }
 
-  it should "update status of every package content" in {
+  it should "update status of every package content if package is installed" in {
     val disableAll = repo("package1").contents map { _.copy(kind = ContentKind.Garbage) }
     val changeIO = repo.change("package1", _.copy(contents = disableAll))
     val (state, nextRepo) = io(changeIO)
 
     nextRepo("package1").contents.loneElement should not be 'installed
     deepGet(Path("target/package1/content1"))(state) shouldBe empty
+  }
+
+  it should "update status of every package content if package is not installed" in {
+    val changeIO = for {
+      uninstall <- repo.change("package1", _.copy(isInstalled = false))
+      disableAll = uninstall("package1").contents map { _.copy(kind = ContentKind.Garbage) }
+      changed <- uninstall.change("package1", _.copy(contents = disableAll))
+    } yield changed
+
+    val (state, nextRepo) = io(changeIO)
+
+    nextRepo("package1").contents.loneElement.kind shouldBe ContentKind.Garbage
   }
 }

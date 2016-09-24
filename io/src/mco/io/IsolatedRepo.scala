@@ -38,12 +38,9 @@ class IsolatedRepo private (source: Source[IO], target: Path, known: Map[String,
 
   private def rename(oldKey: String, newKey: String): IO[IsolatedRepo] = for {
     _ <- moveTree(target / oldKey, target / newKey)
-    newSource <- source.rename(oldKey, newKey)
+    result <- source.rename(oldKey, newKey)
+    (newSource, media) = result
     (pkg, _) = known(oldKey)
-    newMedias <- newSource.list
-    media = newMedias
-      .collect { case (_, m) if m.key == newKey => m }
-      .headOption getOrElse sys.error("Source#rename contract violation")
     newKnown = known - oldKey + { (newKey, (pkg.copy(key = newKey), media)) }
   } yield new IsolatedRepo(newSource, target, newKnown)
 
@@ -117,9 +114,10 @@ object IsolatedRepo extends Repository.Companion[IO, Set[Package]] {
     for {
       existing <- source.list
       updated <- IO.traverse(existing)({statusFromExisting(Path(target)) _}.tupled)
-      known = state.map(p => p.key -> p).toMap.filterKeys(existing.contains)
+      known = state.map(p => p.key -> p).toMap
       repos = updated.map {
-        case (key, (pkg, media)) if known contains key => (key, (known(key), media))
+        case (key, (pkg, media)) if known contains key =>
+          (key, (known(key).copy(isInstalled = pkg.isInstalled), media))
         case tuple: Any => tuple
       }
     } yield new IsolatedRepo(source, Path(target), repos.toMap): Repository[IO, Set[Package]]

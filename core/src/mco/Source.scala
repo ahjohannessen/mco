@@ -9,5 +9,5 @@ trait Source[M[_]] {
 
   def add(f: String): M[Fail Xor Source[M]]
   def remove(s: String): M[Fail Xor Source[M]]
-  def rename(from: String, to: String): M[Source[M]]
+  def rename(from: String, to: String): M[(Source[M], Media[M])] // TODO consider failed renames
 }

@@ -13,8 +13,10 @@ import mco.io.files.ops._
 
 final class FolderSource private (path: Path, media: Path => IO[Option[(Package, Media[IO])]]) extends Source[IO] {
 
-  override def rename(from: String, to: String): IO[Source[IO]] =
-    for (_ <- moveTree(path / from, path / to)) yield new FolderSource(path, media)
+  override def rename(from: String, to: String): IO[(Source[IO], Media[IO])] = for {
+    _ <- moveTree(path / from, path / to)
+    m <- media(path / to)
+  } yield (new FolderSource(path, media), m.get._2)
 
   override def add(f: String): IO[Fail Xor Source[IO]] =
     for (_ <- copyTree(Path(f), path / f)) yield new FolderSource(path, media).right

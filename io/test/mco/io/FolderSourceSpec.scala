@@ -13,7 +13,7 @@ class FolderSourceSpec extends UnitSpec {
   private val stub = fs(
     "storage" -> dir(
       "file" -> obj(),
-      "folder" -> obj(),
+      "folder" -> dir(),
       "archive.zip" -> obj()
     ),
     "another file" -> obj(),
@@ -69,7 +69,7 @@ class FolderSourceSpec extends UnitSpec {
   }
 
   "FolderSource#rename" should "rename file or folder on disk" in {
-    val Some(src) = run.value(FolderSource("storage", classifier, media("folder" -> emptys, "zondar" -> emptys)))
+    val Some(src) = run.value(FolderSource("storage", classifier, media("storage/folder" -> emptys, "storage/zondar" -> emptys)))
     val state = run.state(src rename ("folder", "zondar"))
     val Some(Dir(folderContents)) = deepGet(Path("storage"))(state)
     folderContents shouldNot contain key "folder"
