@@ -27,19 +27,19 @@ class JsonStorage[S: Serializer[?, Json]: Extractor[?, Json]: Empty](target: Pat
   def applyToLeft[A]: ((StoreOp[S], A)) => (IO[S], A) = _ leftMap this
 }
 
-object JsonStorage {
-  import ContentKind._
-  implicit val contentKindExtractor: Extractor[ContentKind, Json] = Json.extractor[Int].map{
-    case 0 => Mod
-    case 1 => Doc
-    case _ => Garbage
-  }
-
-  implicit val contentKindSerializer: Serializer[ContentKind, Json] =
-    Json.serializer[Int]
-      .contramap[ContentKind]{
-      case Mod => 0
-      case Doc => 1
-      case Garbage => -1
-    }
-}
+//object JsonStorage {
+//  import ContentKind._
+//  implicit val contentKindExtractor: Extractor[ContentKind, Json] = Json.extractor[Int].map{
+//    case 0 => Mod
+//    case 1 => Doc
+//    case _ => Garbage
+//  }
+//
+//  implicit val contentKindSerializer: Serializer[ContentKind, Json] =
+//    Json.serializer[Int]
+//      .contramap[ContentKind]{
+//      case Mod => 0
+//      case Doc => 1
+//      case Garbage => -1
+//    }
+//}
