@@ -10,31 +10,31 @@ import cats.syntax.bifunctor._
 import cats.instances.tuple._
 
 
-final class PersistedRepo[M[_]: Functor, S](wrapped: Repository[M, S])
+final class PersistedRepo[M[_]: Functor, S](current: Repository[M, S])
   extends Repository[λ[α => M[(StoreOp[S], α)]], Unit] {
 
   override def state: Unit = ()
 
-  override def apply(key: String): Package = wrapped(key)
-  override def packages: Traversable[Package] = wrapped.packages
+  override def apply(key: String): Package = current(key)
+  override def packages: Traversable[Package] = current.packages
 
   private def recordUpdate(next: Repository[M, S]) = {
-    (Update(wrapped.state, next.state): StoreOp[S], new PersistedRepo(next).widen)
+    (Update(current.state, next.state): StoreOp[S], new PersistedRepo(next).widen)
   }
 
-  private def recordXorUpdate(xor: Fail Xor Repository[M, S]): (StoreOp[S], Xor[Fail, Self]) =
+  private def recordXorUpdate(xor: Fail Xor Repository[M, S]): (StoreOp[S], Fail Xor Self) =
     xor.fold(
-      fail => (NoOp(wrapped.state), Xor.left(fail)),
+      fail => (NoOp(current.state), Xor.left(fail)),
       repo => recordUpdate(repo) bimap (identity, Xor.right)
     )
 
   override def change(oldKey: String, updates: Package): M[(StoreOp[S], Self)] =
-    wrapped change (oldKey, updates) map recordUpdate
+    current change (oldKey, updates) map recordUpdate
 
   override def add(f: String): M[(StoreOp[S], Fail Xor Self)] =
-    wrapped add f map recordXorUpdate
+    current add f map recordXorUpdate
 
   override def remove(s: String): M[(StoreOp[S], Fail Xor Self)] = {
-    wrapped remove s map recordXorUpdate
+    current remove s map recordXorUpdate
   }
 }
