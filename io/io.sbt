@@ -11,8 +11,6 @@ libraryDependencies ++= Seq(
 
   "com.propensive" %% "rapture-json-jawn" % "2.0.0-M7",
 
-  "com.h2database" % "h2" % "1.4.192",
-  "org.tpolecat" %% "doobie-core-cats" % "0.3.1-SNAPSHOT",
 
   "com.typesafe" % "config" % "1.3.0",
   "com.github.pathikrit" %% "better-files" % "2.16.0",
