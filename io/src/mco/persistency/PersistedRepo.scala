@@ -38,3 +38,7 @@ final class PersistedRepo[M[_]: Functor, S](current: Repository[M, S])
     current remove s map recordXorUpdate
   }
 }
+
+object PersistedRepo {
+  type Lift[M[_], S] = { type T[A] = M[(StoreOp[S], A)] }
+}
