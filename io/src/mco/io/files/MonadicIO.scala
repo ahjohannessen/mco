@@ -2,7 +2,7 @@ package mco.io.files
 
 import cats.Monad
 import cats.free.Free
-import freasymonad.free
+import freasymonad.cats.free
 
 // $COVERAGE-OFF$Macro-generated code
 @free sealed trait MonadicIO {
