@@ -3,11 +3,11 @@ package mco.persistency
 import scala.util.Try
 
 import alleycats.Empty
-import cats.{Id, ~>}
 import cats.instances.tuple._
-import cats.syntax.bifunctor._
 import cats.syntax.applicative._
+import cats.syntax.bifunctor._
 import cats.syntax.functor._
+import cats.~>
 import mco._
 import mco.io.EffectRepo
 import mco.io.files.ops._
@@ -31,22 +31,19 @@ class JsonStorage[S: Serializer[?, Json]: Extractor[?, Json]: Empty](target: Pat
 }
 
 object JsonStorage {
-  def wrap[S: Serializer[?, Json]: Extractor[?, Json]: Empty]
+  def preload[S: Serializer[?, Json]: Extractor[?, Json]: Empty]
   (
     repo: Repository.Companion[IO, S],
     json: Path,
     target: String,
-    source: Source[IO],
-    nat: IO ~> Id
-  ): Repository[Id, Unit] = nat {
+    source: Source[IO]
+  ): IO[Repository[IO, Unit]] = {
     for {
       storage <- new JsonStorage[S](json).pure[IO]
       state <- storage(Read)
       loaded <- repo(source, target, state)
-    } yield new EffectRepo[PersistedRepo.Lift[IO, S]#T, Unit](
-      new PersistedRepo(loaded).widen,
-      outputState(storage) andThen nat
-    )
+      pr = new PersistedRepo(loaded).widen
+    } yield new EffectRepo[PersistedRepo.Lift[IO, S]#T, IO, Unit](pr, outputState(storage)).widen
   }
 
   private def outputState[S](st: JsonStorage[S]) = new (PersistedRepo.Lift[IO, S]#T ~> IO) {

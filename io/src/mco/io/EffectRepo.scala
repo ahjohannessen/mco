@@ -3,24 +3,25 @@ package mco.io
 import scala.language.higherKinds
 
 import cats.data.Xor
-import cats.{~>, Id}
+import cats.syntax.functor._
+import cats.{Functor, ~>}
 import mco.{Fail, Package, Repository}
 
-class EffectRepo[M[_], S](wrapped: Repository[M, S], nat: M ~> Id)
-  extends Repository[Id, Unit]
+class EffectRepo[F[_], G[_]: Functor, S](wrapped: Repository[F, S], nat: F ~> G)
+  extends Repository[G, Unit]
 {
   override def state: Unit = ()
   override def apply(key: String): Package = wrapped(key)
   override def packages: Traversable[Package] = wrapped.packages
 
-  private val wrap = new EffectRepo(_: Repository[M, S], nat)
+  private val wrap = new EffectRepo(_: Repository[F, S], nat)
 
-  override def change(oldKey: String, updates: Package): Self =
-    wrap(nat(wrapped change (oldKey, updates)))
+  override def change(oldKey: String, updates: Package): G[Self] =
+    nat(wrapped change (oldKey, updates)) map wrap
 
-  override def add(f: String): Xor[Fail, Self] =
-    nat(wrapped add f) map wrap
+  override def add(f: String): G[Fail Xor Self] =
+    nat(wrapped add f) map (_ map wrap)
 
-  override def remove(s: String): Xor[Fail, Self] =
-    nat(wrapped remove s) map wrap
+  override def remove(s: String): G[Fail Xor Self] =
+    nat(wrapped remove s) map (_ map wrap)
 }

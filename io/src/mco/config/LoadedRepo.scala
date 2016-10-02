@@ -32,16 +32,20 @@ object LoadedRepo {
     IO.sequence(t) map (_ flatMap identity)
   }
 
-  private def repo(c: RepoConfig, nat: IO ~> Id)
-                  (src: Source[IO]): Repository[Id, Unit] = {
+  private def repo(c: RepoConfig, nat: IO ~> Id)(src: Source[IO]): Repository[Id, Unit] =
     (c.kind, c.persistency) match {
       case (RepoKind.Isolated, Persistency.JSON) =>
-        JsonStorage.wrap(IsolatedRepo, Path(c.key + ".json"), c.target, src, nat)
+        new EffectRepo(
+          nat(JsonStorage.preload(IsolatedRepo, Path(c.key + ".json"), c.target, src)),
+          nat
+        )
 
       case (RepoKind.Isolated, Persistency.None) =>
-        new EffectRepo(nat(IsolatedRepo(src, c.target, Set())), nat)
+        new EffectRepo(
+          nat(IsolatedRepo(src, c.target, Set())),
+          nat
+        )
     }
-  }
 
   def apply(c: RepoConfig)(nat: IO ~> Id): Try[Repository[Id, Unit]] =
     nat(source(c)) map repo(c, nat)

@@ -57,6 +57,10 @@ class JsonStorageSpec extends UnitSpec {
     } Json(pkg).as[Package] should equal (pkg)
   }
 
+  "JsonStorage.wrap" should "create EffectRepo with persistency side-effects" in {
+    pending
+  }
+
   private def storage = new JsonStorage[Vector[Int]](Path("state.json"))
 
   private def initialState = fs("state.json" -> obj("[17,25,83]".getBytes))
