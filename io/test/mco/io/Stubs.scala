@@ -1,10 +1,11 @@
 package mco.io
 
+import cats.data.Xor
 import mco.io.files.Path
 import mco.io.files.ops._
 import cats.syntax.applicative._
 import cats.instances.vector._
-import mco.Media
+import mco.{Fail, Media, Package, Source}
 
 object Stubs {
   def media(mappings: (String, Set[String])*): Media.Companion[IO] = new Media.Companion[IO] {
@@ -23,6 +24,19 @@ object Stubs {
 
     override def apply(v1: String): IO[Option[Media[IO]]] =
       map.get(v1).map(new MediaStub(Path(v1), _): Media[IO]).pure[IO]
+  }
+
+  def emptySource: Source[IO] = new Source[IO] {
+    override def list: IO[Stream[(Package, Media[IO])]] = IO.pure(Stream())
+
+    override def add(f: String): IO[Xor[Fail, Source[IO]]] =
+      sys.error("Operation not supported")
+
+    override def remove(s: String): IO[Xor[Fail, Source[IO]]] =
+      sys.error("Operation not supported")
+
+    override def rename(from: String, to: String): IO[(Source[IO], Media[IO])] =
+      sys.error("Operation not supported")
   }
 
   val emptys: Set[String] = Set.empty

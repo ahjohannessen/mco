@@ -1,11 +1,15 @@
 package mco.persistency
 
-import mco.{Content, ContentKind, Package, UnitSpec}
-import mco.io.files.Path
+import mco.{Content, ContentKind, Fail, Package, Repository, Source, UnitSpec}
+import mco.io.files.{IO, Path}
 import mco.io.IOInterpreters._
 import FSDsl._
+import cats.data.Xor
+import cats.syntax.applicative._
+import cats.syntax.xor._
 import rapture.json._
 import jsonBackends.jawn._
+import mco.io.Stubs
 
 class JsonStorageSpec extends UnitSpec {
   "JsonStorage#apply" should "do nothing if given NoOp value" in {
@@ -57,9 +61,41 @@ class JsonStorageSpec extends UnitSpec {
     } Json(pkg).as[Package] should equal (pkg)
   }
 
-  "JsonStorage.wrap" should "create EffectRepo with persistency side-effects" in {
-    pending
+  "JsonStorage.preload" should "create repository with persistency side-effects" in {
+    val repo = JsonStorage.preload(fakeCompanion, Path("state.json"), "target", Stubs.emptySource)
+    val io = repo
+      .flatMap(_.change("foo", Package("foo", Set())))
+      .flatMap(_.add("bar"))
+      .flatMap(xor => xor.toOption.getOrElse(fail()).remove("baz"))
+
+    val state = StubIORunner(initialState).state(io)
+    deepGet(Path("state.json"))(state) should equal (Some(obj("[17,25,83,1,2,3]".getBytes)))
   }
+
+  private def fakeCompanion = new Repository.Companion[IO, Vector[Int]] {
+    override def apply(s: Source[IO], t: String, state: Vector[Int]): IO[Repository[IO, Vector[Int]]] = {
+      fakeRepo(state).pure[IO]
+    }
+  }
+
+  private def fakeRepo(currentState: Vector[Int]): Repository[IO, Vector[Int]] =
+    new Repository[IO, Vector[Int]]
+    {
+      override def state: Vector[Int] = currentState
+
+      override def apply(key: String): Package = fail("No package")
+
+      override def packages: Traversable[Package] = Traversable()
+
+      override def change(oldKey: String, updates: Package): IO[Self] =
+        fakeRepo(state :+ 1).widen.pure[IO]
+
+      override def add(f: String): IO[Fail Xor Self] =
+        fakeRepo(state :+ 2).widen.right[Fail].pure[IO]
+
+      override def remove(s: String): IO[Fail Xor Self] =
+        fakeRepo(state :+ 3).widen.right[Fail].pure[IO]
+    }
 
   private def storage = new JsonStorage[Vector[Int]](Path("state.json"))
 
