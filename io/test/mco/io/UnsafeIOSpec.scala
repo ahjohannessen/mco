@@ -1,15 +1,15 @@
 package mco.io
 
 import better.files.File
-import mco.io.files.{Path, UnsafeIOInterpeter}
+import mco.io.files.{Path, UnsafeIOInterpreter}
 import org.scalatest.{Matchers, Outcome, fixture}
-import UnsafeIOInterpeter._
+import UnsafeIOInterpreter._
 import net.sf.sevenzipjbinding.SevenZip
 
 class UnsafeIOSpec extends fixture.FlatSpec with Matchers {
   "UnsafeIOInterpreter#childrenOf" should "list children of directory" in { dir =>
     val expected = Seq("test_folder", "test_archive.7z", "test_archive.rar", "test_archive.zip")
-    val actual = UnsafeIOInterpeter.childrenOf(dir) map (_ relativeToS dir)
+    val actual = UnsafeIOInterpreter.childrenOf(dir) map (_ relativeToS dir)
     actual should contain theSameElementsAs expected
   }
 

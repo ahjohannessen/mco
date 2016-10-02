@@ -1,10 +1,9 @@
 package mco.persistency
 
-import mco.UnitSpec
+import mco.{Content, ContentKind, Package, UnitSpec}
 import mco.io.files.Path
 import mco.io.IOInterpreters._
 import FSDsl._
-
 import rapture.json._
 import jsonBackends.jawn._
 
@@ -48,6 +47,14 @@ class JsonStorageSpec extends UnitSpec {
       runner.state(applyResult) should equal (runner.state(applyResult2))
       runner.value(applyResult) should equal (runner.value(applyResult2))
     }
+  }
+
+  "JsonStorage.converters" should "allow to convert Package back and forth" in {
+    import JsonStorage.converters._
+    for {
+      kind <- Seq(ContentKind.Garbage, ContentKind.Mod, ContentKind.Doc)
+      pkg = Package("pkg", Set(Content("cnt", kind, isInstalled = false)), isInstalled = false)
+    } Json(pkg).as[Package] should equal (pkg)
   }
 
   private def storage = new JsonStorage[Vector[Int]](Path("state.json"))

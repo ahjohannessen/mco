@@ -17,5 +17,5 @@ package object files {
     def liftT[B](b: IO[B]): UnsafeIO[B] = XorT.liftT(b)
   }
 
-  def unsafePerformIO[A](program: IO[A]): A = UnsafeIOInterpeter.run(program)
+  def unsafePerformIO[A](program: IO[A]): A = UnsafeIOInterpreter.run(program)
 }

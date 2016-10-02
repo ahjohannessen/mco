@@ -3,15 +3,15 @@ package mco.persistency
 import scala.util.Try
 
 import alleycats.Empty
-import cats.~>
+import cats.{Id, ~>}
 import cats.instances.tuple._
 import cats.syntax.bifunctor._
 import cats.syntax.applicative._
 import cats.syntax.functor._
 import mco._
+import mco.io.EffectRepo
 import mco.io.files.ops._
 import mco.io.files.{IO, Path}
-import monix.eval.Task
 import rapture.core.modes.throwExceptions._
 import rapture.json._
 import rapture.json.jsonBackends.jawn._
@@ -37,8 +37,8 @@ object JsonStorage {
     json: Path,
     target: String,
     source: Source[IO],
-    nat: IO ~> Task
-  ): Task[Repository[Task, Unit]] = nat {
+    nat: IO ~> Id
+  ): Repository[Id, Unit] = nat {
     for {
       storage <- new JsonStorage[S](json).pure[IO]
       state <- storage(Read)
@@ -54,7 +54,7 @@ object JsonStorage {
       = fa map st.applyToLeft[A] flatMap { case (io, a) => io as a }
   }
 
-  object serializers {
+  object converters {
     import ContentKind._
     implicit val contentKindExtractor: Extractor[ContentKind, Json] = Json.extractor[Int].map {
       case 0 => Mod

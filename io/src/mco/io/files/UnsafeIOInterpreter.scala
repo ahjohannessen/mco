@@ -4,7 +4,7 @@ import better.files.File
 import cats._
 import com.olegpy.schive.Archive
 
-object UnsafeIOInterpeter extends MonadicIO.Interp[Id] {
+object UnsafeIOInterpreter extends MonadicIO.Interp[Id] {
   override def childrenOf(path: Path): Stream[Path] =
     path.f.children.map(Path(_)).toStream
 
