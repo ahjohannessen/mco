@@ -121,18 +121,6 @@ object IOInterpreters {
       def apply[A](program: IO[A]): (Dir, A) = (stub run program).run(fs).value
       def value[A](program: IO[A]): A = (stub run program).runA(fs).value
       def state[A](program: IO[A]): Dir = (stub run program).runS(fs).value
-      def idNat: (Eval[Dir], IO ~> Id) = {
-        var dir: Dir = fs
-        val ev = Eval.always(dir)
-        val nat = new (IO ~> Id) {
-          override def apply[A](fa: IO[A]): A = {
-            val (newFs, result) = StubIORunner(ev.value).apply(fa)
-            dir = newFs
-            result
-          }
-        }
-        (ev, nat)
-      }
     }
   }
 }
