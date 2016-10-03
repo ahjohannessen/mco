@@ -1,6 +1,5 @@
 package mco.io
 
-import cats.{Eval, Id, ~>}
 import cats.data.State
 import cats.syntax.option._
 import cats.syntax.traverse._
