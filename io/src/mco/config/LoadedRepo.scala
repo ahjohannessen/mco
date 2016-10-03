@@ -19,10 +19,10 @@ import rapture.json.jsonBackends.jawn._
 
 object LoadedRepo {
   private def classifier(c: RepoConfig): Try[Classifier[IO]] =
-    compileAs[Classifier[IO]](c.classifier)
+    CompileAs[Classifier[IO]](c.classifier)
 
   private def media(c: RepoConfig): Try[Vector[Media.Companion[IO]]] =
-    c.media traverse compileAs[Media.Companion[IO]]
+    c.media traverse CompileAs[Media.Companion[IO]]
 
   private def source(c: RepoConfig): IO[Try[Source[IO]]] = {
     val t: Try[IO[Try[Source[IO]]]] = for {

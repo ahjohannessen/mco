@@ -5,7 +5,7 @@ import scala.reflect.runtime.universe.TypeTag
 import scala.tools.reflect.ToolBox
 import scala.util.Try
 
-object compileAs {
+object CompileAs {
   def apply[A: TypeTag](fullName: String): Try[A] = {
     val toolbox = currentMirror.mkToolBox()
     Try {
