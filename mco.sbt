@@ -1,10 +1,14 @@
-lazy val mco = project in file(".") aggregate (core, io) settings (commonSettings: _*)
+lazy val mco = project in file(".") aggregate (core, io, ui) settings (commonSettings: _*)
 
 lazy val core = project
   .settings(commonSettings: _*)
 
 lazy val io = project
   .dependsOn(core % "compile->compile;test->test")
+  .settings(commonSettings: _*)
+
+lazy val ui = project
+  .dependsOn(core % "compile->compile;test->test", io % "compile->compile;test->test")
   .settings(commonSettings: _*)
 
 lazy val commonSettings = Seq(
