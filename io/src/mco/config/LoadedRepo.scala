@@ -14,7 +14,7 @@ import mco._
 import mco.io.files.{IO, Path}
 import mco.io.{EffectRepo, FolderSource, IsolatedRepo}
 import mco.persistency.JsonStorage
-import mco.persistency.JsonStorage.converters._
+import mco.persistency.JsonStorage.Converters._
 import rapture.json.jsonBackends.jawn._
 
 object LoadedRepo {

@@ -53,7 +53,7 @@ object JsonStorage {
       = fa map st.applyToLeft[A] flatMap { case (io, a) => io as a }
   }
 
-  object converters {
+  object Converters {
     import ContentKind._
     implicit val contentKindExtractor: Extractor[ContentKind, Json] = Json.extractor[Int].map {
       case 0 => Mod

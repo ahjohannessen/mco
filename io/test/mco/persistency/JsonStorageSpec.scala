@@ -53,8 +53,8 @@ class JsonStorageSpec extends UnitSpec {
     }
   }
 
-  "JsonStorage.converters" should "allow to convert Package back and forth" in {
-    import JsonStorage.converters._
+  "JsonStorage.Converters" should "allow to convert Package back and forth" in {
+    import JsonStorage.Converters._
     for {
       kind <- Seq(ContentKind.Garbage, ContentKind.Mod, ContentKind.Doc)
       pkg = Package("pkg", Set(Content("cnt", kind, isInstalled = false)), isInstalled = false)
