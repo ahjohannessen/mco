@@ -1,6 +1,6 @@
 package mco.persistency
 
-import mco.{Content, ContentKind, Fail, Package, Repository, Source, UnitSpec}
+import mco._
 import mco.io.files.{IO, Path}
 import mco.io.IOInterpreters._
 import FSDsl._
