@@ -21,9 +21,11 @@ class JsonStorage[S: Serializer[?, Json]: Extractor[?, Json]: Empty](target: Pat
 
   override def apply(v1: StoreOp[S]): IO[S] = v1 match {
     case Update(_, next) => setContent(target, Json(next).toBareString.getBytes("UTF-8")) as next
-    case Read => readBytes(target)
-      .map(new String(_))
-      .map(s => Try(Json.parse(s).as[S]) getOrElse Empty[S].empty)
+    case Read => for {
+      isFile <- isRegularFile(target)
+      data <- if (isFile) readBytes(target).map(new String(_))
+              else IO.pure("")
+    } yield Try(Json.parse(data).as[S]) getOrElse Empty[S].empty
     case NoOp(s) => IO.pure(s)
   }
 

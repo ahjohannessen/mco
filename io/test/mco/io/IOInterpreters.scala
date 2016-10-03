@@ -41,20 +41,20 @@ object IOInterpreters {
           }
       }
 
-    def err: Nothing = sys.error("Incorrect stub fs access")
+    def err(p: Path): Nothing = sys.error(s"Incorrect stub fs access at ${p.asString}")
 
     def deepSet(p: Path, o: Option[FileSystemObject])(root: Dir): Dir = {
       def deepSetR(segments: List[String], fso: FileSystemObject): FileSystemObject = {
         (segments, fso) match {
           case (seg :: Nil, Dir(map)) => Dir(o.fold(map - seg)(map.updated(seg, _)))
           case (seg :: ss, Dir(map)) => Dir(map.updated(seg, deepSetR(ss, map(seg))))
-          case _ => err
+          case _ => err(p)
         }
       }
 
       deepSetR(p.asString.split(Array('\\', '/')).toList, root) match {
         case d: Dir => d
-        case _ => err
+        case _ => err(p)
       }
     }
 
@@ -63,7 +63,7 @@ object IOInterpreters {
         State.inspect({deepGet(path) _} andThen {
           case Some(Dir(m)) =>
             m.keys.map(path / _).toStream
-          case _ => err
+          case _ => err(path)
         })
 
       override def descendantsOf(path: Path): FStub[Stream[Path]] = State.inspect(
@@ -84,12 +84,12 @@ object IOInterpreters {
 
       override def archiveEntries(path: Path): FStub[Set[String]] = State.inspect({deepGet(path) _} andThen {
         case Some(Arc(ch)) => rget("")(ch).toSet
-        case _ => err
+        case _ => err(path)
       })
 
       override def extract(path: Path, ft: Map[String, Path]): FStub[Unit] =  for {
         o <- State.inspect(deepGet(path))
-        contents = o.getOrElse(err).asInstanceOf[Arc].dir.contents
+        contents = o.getOrElse(err(path)).asInstanceOf[Arc].dir.contents
         archived = contents.keySet
         toExtract = ft.filterKeys(archived)
         result = toExtract.map({case (k, p) => State.modify(deepSet(p, contents(k).some))})
@@ -98,7 +98,7 @@ object IOInterpreters {
 
       override def readBytes(path: Path): FStub[Array[Byte]] = State.inspect({deepGet(path) _} andThen {
         case Some(Obj(data)) => data.toArray
-        case _ => err
+        case _ => err(path)
       })
 
       override def setContent(path: Path, cnt: Array[Byte]): FStub[Unit] = State.modify(deepSet(path, obj(cnt).some))
@@ -107,12 +107,12 @@ object IOInterpreters {
 
       override def copyTree(source: Path, dest: Path): FStub[Unit] = for {
         sourceCopy <- State.inspect(deepGet(source))
-        _ <- State.modify(deepSet(dest, sourceCopy orElse err))
+        _ <- State.modify(deepSet(dest, sourceCopy orElse err(dest)))
       } yield ()
 
       override def moveTree(source: Path, dest: Path): FStub[Unit] = for {
         sourceCopy <- State.inspect(deepGet(source))
-        _ <- State.modify(deepSet(dest, sourceCopy orElse err))
+        _ <- State.modify(deepSet(dest, sourceCopy orElse err(dest)))
         _ <- State.modify(deepSet(source, none))
       } yield ()
     }

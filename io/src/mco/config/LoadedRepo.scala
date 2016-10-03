@@ -1,18 +1,21 @@
 package mco.config
 
 
+import scala.language.higherKinds
 import scala.util.{Failure, Success, Try}
 
 import cats.instances.try_._
 import cats.instances.vector._
+import cats.syntax.functor._
+import cats.syntax.flatMap._
 import cats.syntax.traverse._
-import cats.{Id, ~>}
+import cats.{Monad, Functor, ~>}
 import mco._
 import mco.io.files.{IO, Path}
 import mco.io.{EffectRepo, FolderSource, IsolatedRepo}
 import mco.persistency.JsonStorage
+import mco.persistency.JsonStorage.converters._
 import rapture.json.jsonBackends.jawn._
-import JsonStorage.converters._
 
 object LoadedRepo {
   private def classifier(c: RepoConfig): Try[Classifier[IO]] =
@@ -32,21 +35,18 @@ object LoadedRepo {
     IO.sequence(t) map (_ flatMap identity)
   }
 
-  private def repo(c: RepoConfig, nat: IO ~> Id)(src: Source[IO]): Repository[Id, Unit] =
+  private def repo[F[_]: Functor](c: RepoConfig, nat: IO ~> F)(src: Source[IO]): F[Repository[F, Unit]] =
     (c.kind, c.persistency) match {
       case (RepoKind.Isolated, Persistency.JSON) =>
-        new EffectRepo(
-          nat(JsonStorage.preload(IsolatedRepo, Path(c.key + ".json"), c.target, src)),
-          nat
-        )
+        nat(JsonStorage.preload(IsolatedRepo, Path(c.key + ".json"), c.target, src))
+          .map(new EffectRepo(_, nat))
 
       case (RepoKind.Isolated, Persistency.None) =>
-        new EffectRepo(
-          nat(IsolatedRepo(src, c.target, Set())),
-          nat
-        )
+        nat(IsolatedRepo(src, c.target, Set()))
+          .map(new EffectRepo(_, nat))
     }
 
-  def apply(c: RepoConfig)(nat: IO ~> Id): Try[Repository[Id, Unit]] =
-    nat(source(c)) map repo(c, nat)
+  def apply[F[_]: Monad](c: RepoConfig, nat: IO ~> F): F[Try[Repository[F, Unit]]] = {
+    nat(source(c)) map (_ map repo(c, nat)) flatMap (x => x.sequence)
+  }
 }
