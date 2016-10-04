@@ -5,7 +5,6 @@ import cats.syntax.option._
 import cats.syntax.traverse._
 import cats.instances.list._
 import mco.io.files._
-import mco.io.files.{MonadicIO, Path}
 
 object IOInterpreters {
   sealed trait FileSystemObject
