@@ -10,8 +10,7 @@ import cats.syntax.functor._
 import cats.~>
 import mco._
 import mco.io.EffectRepo
-import mco.io.files.ops._
-import mco.io.files.{IO, Path}
+import mco.io.files._
 import rapture.core.modes.throwExceptions._
 import rapture.json._
 import rapture.json.jsonBackends.jawn._
@@ -26,7 +25,6 @@ class JsonStorage[S: Serializer[?, Json]: Extractor[?, Json]: Empty](target: Pat
       data <- if (isFile) readBytes(target).map(new String(_))
               else IO.pure("")
     } yield Try(Json.parse(data).as[S]) getOrElse Empty[S].empty
-    case NoOp(s) => IO.pure(s)
   }
 
   def applyToLeft[A]: ((StoreOp[S], A)) => (IO[S], A) = _ leftMap this

@@ -1,8 +1,7 @@
 package mco.io
 
 import mco.Media
-import mco.io.files.Path
-import mco.io.files.ops._
+import mco.io.files._
 import cats.syntax.option._
 
 final class ArchiveMedia private (val path: Path) extends Media[IO] {

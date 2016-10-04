@@ -1,9 +1,7 @@
 package mco.io
 
 import cats._
-import cats.data.Xor
-import mco.Fail.Uncaught
-import mco.{Fail, Package, Repository, UnitSpec}
+import mco.{Package, Repository, UnitSpec}
 
 class EffectRepoSpec extends UnitSpec {
   "EffectRepo#state" should "just be Unit value" in {
@@ -42,14 +40,14 @@ class EffectRepoSpec extends UnitSpec {
       stub
     }
 
-    override def add(f: String): Eval[Fail Xor Self] = Eval.always {
+    override def add(f: String): Eval[Self] = Eval.always {
       sideEffect = "add"
-      Xor.right(stub)
+      stub
     }
 
-    override def remove(s: String): Eval[Fail Xor Self] = Eval.always {
+    override def remove(s: String): Eval[Self] = Eval.always {
       sideEffect = "remove"
-      Xor.left(Uncaught(new Exception))
+      stub
     }
   }
 

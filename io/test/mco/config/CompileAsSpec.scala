@@ -6,7 +6,7 @@ import mco.UnitSpec
 import org.scalatest.tagobjects.Slow
 
 class CompileAsSpec extends UnitSpec {
-  "compileAs" should "retrieve object field if it is of specified type" taggedAs Slow in {
+  "CompileAs" should "retrieve object field if it is of specified type" taggedAs Slow in {
     CompileAs[List.type]("List") shouldBe Success(List)
   }
 

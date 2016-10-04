@@ -1,26 +1,24 @@
 package mco.io.files
 
-import cats.Monad
 import cats.free.Free
 import freasymonad.cats.free
 
 // $COVERAGE-OFF$Macro-generated code
 @free sealed trait MonadicIO {
-  type IO[A] = Free[OperationsADT, A]
-  def IO: Monad[IO] = implicitly
   sealed trait OperationsADT[A]
+  type FreeIO[A] = Free[OperationsADT, A]
 
-  def childrenOf(path: Path)                     : IO[Stream[Path]]
-  def descendantsOf(path: Path)                  : IO[Stream[Path]]
-  def removeFile(path: Path)                     : IO[Unit]
-  def isRegularFile(path: Path)                  : IO[Boolean]
-  def isDirectory(path: Path)                    : IO[Boolean]
-  def archiveEntries(path: Path)                 : IO[Set[String]]
-  def extract(path: Path, ft: Map[String, Path]) : IO[Unit]
-  def readBytes(path: Path)                      : IO[Array[Byte]]
-  def setContent(path: Path, cnt: Array[Byte])   : IO[Unit]
-  def createDirectory(path: Path)                : IO[Unit]
-  def copyTree(source: Path, dest: Path)         : IO[Unit]
-  def moveTree(source: Path, dest: Path)         : IO[Unit]
+  def childrenOf(path: Path)                     : FreeIO[Stream[Path]]
+  def descendantsOf(path: Path)                  : FreeIO[Stream[Path]]
+  def removeFile(path: Path)                     : FreeIO[Unit]
+  def isRegularFile(path: Path)                  : FreeIO[Boolean]
+  def isDirectory(path: Path)                    : FreeIO[Boolean]
+  def archiveEntries(path: Path)                 : FreeIO[Set[String]]
+  def extract(path: Path, ft: Map[String, Path]) : FreeIO[Unit]
+  def readBytes(path: Path)                      : FreeIO[Array[Byte]]
+  def setContent(path: Path, cnt: Array[Byte])   : FreeIO[Unit]
+  def createDirectory(path: Path)                : FreeIO[Unit]
+  def copyTree(source: Path, dest: Path)         : FreeIO[Unit]
+  def moveTree(source: Path, dest: Path)         : FreeIO[Unit]
 }
 // $COVERAGE-ON

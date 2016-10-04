@@ -1,7 +1,7 @@
 package mco.io
 
 import mco.{Media, UnitSpec}
-import mco.io.files.{IO, Path, unsafePerformIO}
+import mco.io.files.{IO, Path}
 import IOInterpreters._
 import IOInterpreters.FSDsl._
 
@@ -23,7 +23,8 @@ class FolderMediaSpec extends UnitSpec {
   }
 
   it should "not create media for nonexistend dir" in {
-    unsafePerformIO(FolderMedia("/nope/does/not/exist")) shouldBe empty
+    val (state, _) = pureTestMedia
+    StubIORunner(state).value(FolderMedia("/nope/does/not/exist")) shouldBe empty
   }
 
   private def pureTestMedia: (Dir, Media[IO]) = {

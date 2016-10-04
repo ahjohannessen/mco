@@ -1,11 +1,9 @@
 package mco.io
 
-import cats.data.Xor
-import mco.io.files.Path
-import mco.io.files.ops._
+import mco.io.files._
 import cats.syntax.applicative._
 import cats.instances.vector._
-import mco.{Fail, Media, Package, Source}
+import mco.{Media, Package, Source}
 
 object Stubs {
   def media(mappings: (String, Set[String])*): Media.Companion[IO] = new Media.Companion[IO] {
@@ -29,10 +27,10 @@ object Stubs {
   def emptySource: Source[IO] = new Source[IO] {
     override def list: IO[Stream[(Package, Media[IO])]] = IO.pure(Stream())
 
-    override def add(f: String): IO[Xor[Fail, Source[IO]]] =
+    override def add(f: String): IO[Source[IO]] =
       sys.error("Operation not supported")
 
-    override def remove(s: String): IO[Xor[Fail, Source[IO]]] =
+    override def remove(s: String): IO[Source[IO]] =
       sys.error("Operation not supported")
 
     override def rename(from: String, to: String): IO[(Source[IO], Media[IO])] =

@@ -4,7 +4,7 @@ import cats.data.State
 import cats.syntax.option._
 import cats.syntax.traverse._
 import cats.instances.list._
-import mco.io.files.ops._
+import mco.io.files._
 import mco.io.files.{MonadicIO, Path}
 
 object IOInterpreters {
@@ -117,9 +117,9 @@ object IOInterpreters {
     }
 
     case class StubIORunner(fs: Dir) {
-      def apply[A](program: IO[A]): (Dir, A) = (stub run program).run(fs).value
-      def value[A](program: IO[A]): A = (stub run program).runA(fs).value
-      def state[A](program: IO[A]): Dir = (stub run program).runS(fs).value
+      def apply[A](program: IO[A]): (Dir, A) = program.unsafePerformWith(stub).run(fs).value
+      def value[A](program: IO[A]): A = program.unsafePerformWith(stub).runA(fs).value
+      def state[A](program: IO[A]): Dir = program.unsafePerformWith(stub).runS(fs).value
     }
   }
 }

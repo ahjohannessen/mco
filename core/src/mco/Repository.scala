@@ -2,8 +2,6 @@ package mco
 
 import scala.language.higherKinds
 
-import cats.data.Xor
-
 trait Repository[M[_], S] {
   final type Self = Repository[M, S]
   def state: S
@@ -16,8 +14,8 @@ trait Repository[M[_], S] {
 
   def change(oldKey: String, updates: Package): M[Self]
 
-  def add(f: String): M[Fail Xor Self]
-  def remove(s: String): M[Fail Xor Self]
+  def add(f: String): M[Self]
+  def remove(s: String): M[Self]
 
   final def widen: Self = this
 }

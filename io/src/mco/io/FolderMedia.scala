@@ -2,8 +2,7 @@ package mco.io
 
 import scala.language.postfixOps
 
-import mco.io.files.Path
-import mco.io.files.ops._
+import mco.io.files._
 import cats.syntax.option._
 import cats.syntax.functor._
 import cats.instances.vector._

@@ -1,6 +1,6 @@
 package mco.config
 
-import mco.UnitSpec
+import mco.{Fail, UnitSpec}
 import mco.io.IOInterpreters._
 import FSDsl._
 import cats.arrow.FunctionK
@@ -9,23 +9,27 @@ import org.scalatest.tagobjects.Slow
 
 class LoadedRepoSpec extends UnitSpec {
   "LoadedRepo#apply" should "convert config and transformation to repository" taggedAs Slow in {
-    val repo = LoadedRepo(config, nat)
-    StubIORunner(state).value(repo) should be a 'success
-    val repo2 = LoadedRepo(config.copy(persistency = Persistency.JSON), nat)
-    StubIORunner(state).value(repo2) should be a 'success
+    noException shouldBe thrownBy {
+      run(LoadedRepo(config, nat))
+      run(LoadedRepo(config.copy(persistency = Persistency.JSON), nat))
+    }
   }
 
   it should "fail if config does not point to valid classifiers or media" taggedAs Slow in {
-    val repo = LoadedRepo(config.copy(classifier = "mco.io.Classifiers.faux"), nat)
-    StubIORunner(state).value(repo) should be a 'failure
-    val media = Vector("mco.io.FolderMedia", "mco.io.FauxMedia")
-    val repo2 = LoadedRepo(config.copy(media = media), nat)
-    StubIORunner(state).value(repo2) should be a 'failure
+    a [Fail.MissingResource] shouldBe thrownBy {
+      run(LoadedRepo(config.copy(classifier = "mco.io.Classifiers.phony"), nat))
+    }
+
+    val media = Vector("mco.io.FolderMedia", "mco.io.PhonyMedia")
+    a [Fail.MissingResource] shouldBe thrownBy {
+      run(LoadedRepo(config.copy(media = media), nat)) should be a 'failure
+    }
   }
 
   it should "fail if config source value does not point to a folder" taggedAs Slow in {
-    val repo = LoadedRepo(config.copy(source="non_existent"), nat)
-    StubIORunner(state).value(repo) should be a 'failure
+    a [Fail.UnexpectedType] shouldBe thrownBy {
+      run(LoadedRepo(config.copy(source = "non_existent"), nat))
+    }
   }
 
   private def config = RepoConfig(
@@ -44,4 +48,6 @@ class LoadedRepoSpec extends UnitSpec {
   )
 
   private def nat = FunctionK.id[IO]
+
+  private def run[A](r: IO[A]): A = StubIORunner(state).value(r)
 }

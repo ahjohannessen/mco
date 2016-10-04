@@ -1,8 +1,6 @@
 package mco.persistency
 
 import cats.Id
-import cats.data.Xor
-import mco.Fail.Uncaught
 import mco.{Fail, Package, Repository, UnitSpec}
 
 class PersistedRepoSpec extends UnitSpec {
@@ -12,13 +10,14 @@ class PersistedRepoSpec extends UnitSpec {
     storeOp should equal (Update(stub().state, nextState))
 
     val (storeOp2, _) = new PersistedRepo(stub()).add("key")
-    val nextState2 = stub().add("key").getOrElse(fail("expected Right")).state
+    val nextState2 = stub().add("key").state
     storeOp2 should equal (Update(stub().state, nextState2))
   }
 
-  it should "respond to failures with NoOp" in {
-    val (storeOp, _) = new PersistedRepo(stub()).remove("failure is expected")
-    storeOp shouldBe a [NoOp[_]]
+  it should "propagate failures without any further operation" in {
+    a [Fail.NameConflict] shouldBe thrownBy{
+      new PersistedRepo(stub()).remove("failure is expected")
+    }
   }
 
   it should "only return Unit value as its state" in {
@@ -37,7 +36,7 @@ class PersistedRepoSpec extends UnitSpec {
     override def apply(key: String): Package = Package(key, Set())
     override def packages: Traversable[Package] = Seq(Package("1", Set()), Package("2", Set()))
     override def change(oldKey: String, updates: Package): Self = stub(i * 11 + 17)
-    override def add(f: String): Id[Xor[Fail, Self]] = Xor.right(stub(i * 17 + 11))
-    override def remove(s: String): Id[Xor[Fail, Self]] = Xor.left(Uncaught(new Exception))
+    override def add(f: String): Self = stub(i * 17 + 11)
+    override def remove(s: String): Self = throw Fail.NameConflict("test exception")
   }
 }

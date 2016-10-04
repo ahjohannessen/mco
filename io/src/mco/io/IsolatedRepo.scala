@@ -2,13 +2,11 @@ package mco.io
 
 import scala.collection.immutable.SortedSet
 
-import cats.data.Xor
 import cats.instances.stream._
 import cats.syntax.applicative._
 import cats.syntax.functor._
 import mco._
-import mco.io.files.ops._
-import mco.io.files.{Path, UnsafeIO}
+import mco.io.files._
 
 
 class IsolatedRepo private (source: Source[IO], target: Path, known: Map[String, (Package, Media[IO])]) extends Repository[IO, Set[Package]] {
@@ -92,20 +90,19 @@ class IsolatedRepo private (source: Source[IO], target: Path, known: Map[String,
     } yield new IsolatedRepo(source, target, nextKnown)
   }
 
-  override def add(f: String): IO[Fail Xor Self] = {
+  override def add(f: String): IO[Self] = {
     for {
-      nextSource <- UnsafeIO(source add f)
-      nextElements <- UnsafeIO.liftT(nextSource.list)
+      nextSource <- source add f
+      nextElements <- nextSource.list
       Some(t) = nextElements find { case (pkg, _) => pkg.key == f }
-    } yield new IsolatedRepo (nextSource, target, known + (f -> t)).widen
-  }.value
+    } yield new IsolatedRepo(nextSource, target, known + (f -> t)).widen
+  }
 
-  override def remove(s: String): IO[Fail Xor Self] = {
+  override def remove(s: String): IO[Self] = {
     val pkg = apply(s)
     if (pkg.isInstalled) change(s, pkg.copy(isInstalled = false)) flatMap {_.remove(s)}
-    else UnsafeIO(source remove s)
+    else (source remove s)
       .map(nextSource => new IsolatedRepo(nextSource, target, known - s).widen)
-      .value
   }
 }
 

@@ -1,6 +1,5 @@
 package mco.io
 
-import cats.data.{OptionT, Xor}
 import mco._
 import mco.io.IOInterpreters.FSDsl._
 import mco.io.Stubs._
@@ -30,29 +29,28 @@ class IsolatedRepoSpec extends UnitSpec {
 
   "IsolatedRepo companion" should "create a repository given a folder" in {
     val repoOpt = for {
-      src <- OptionT(FolderSource("source", Classifiers.enableAll))
-      repo <- OptionT.liftF(IsolatedRepo(src, "target", Set()))
+      src <- FolderSource("source", Classifiers.enableAll)
+      repo <- IsolatedRepo(src, "target", Set())
     } yield repo
 
-    io.value(repoOpt.value) should not be empty
+    noException shouldBe thrownBy {
+      io.value(repoOpt.value)
+    }
   }
 
-  private def repo = {
-    val repoOptIO = for {
-      src <- OptionT(FolderSource(
-        "source", Classifiers.enableAll, media(
-          "source/package1" -> Set("content1"),
-          "source/package2" -> Set("readme.txt", "toInstall.txt"),
-          "source/renamed" -> Set("content1")
-        ))
+  private def repo = io.value(for {
+    src <- FolderSource(
+      "source", Classifiers.enableAll, media(
+        "source/package1" -> Set("content1"),
+        "source/package2" -> Set("readme.txt", "toInstall.txt"),
+        "source/renamed" -> Set("content1")
       )
-      repo <- OptionT.liftF(IsolatedRepo(src, "target", Set(Package(
-        "package2",
-        Set(Content("readme.txt", ContentKind.Doc), Content("toInstall.txt", ContentKind.Mod))
-      ))))
-    } yield repo
-    io value repoOptIO.value getOrElse fail("Expected repository to create successfully")
-  }
+    )
+    repo <- IsolatedRepo(src, "target", Set(Package(
+      "package2",
+      Set(Content("readme.txt", ContentKind.Doc), Content("toInstall.txt", ContentKind.Mod))
+    )))
+  } yield repo)
 
   it should "preload created repository with existing data" in {
     repo("package1") shouldBe 'installed
@@ -79,14 +77,14 @@ class IsolatedRepoSpec extends UnitSpec {
 
   "IsolatedRepo#add" should "push object to file system and create a package from it" in {
     val addIO = repo add "renamed"
-    val (state, Xor.Right(nextRepo)) = io(addIO)
+    val (state, nextRepo) = io(addIO)
     nextRepo.packages.map(_.key) should contain theSameElementsAs Seq("package1", "package2", "renamed")
     deepGet(Path("source/renamed"))(state) should not be empty
   }
 
   "IsolatedRepo#remove" should "remove object from fs and its package" in {
     val removeIO = repo remove "package1"
-    val (state, Xor.Right(nextRepo)) = io(removeIO)
+    val (state, nextRepo) = io(removeIO)
     nextRepo.packages.loneElement.key shouldBe "package2"
     deepGet(Path("source/package1"))(state) shouldBe empty
     deepGet(Path("target/package1"))(state) shouldBe empty
@@ -134,7 +132,7 @@ class IsolatedRepoSpec extends UnitSpec {
       changed <- uninstall.change("package1", _.copy(contents = disableAll))
     } yield changed
 
-    val (state, nextRepo) = io(changeIO)
+    val (_, nextRepo) = io(changeIO)
 
     nextRepo("package1").contents.loneElement.kind shouldBe ContentKind.Garbage
   }

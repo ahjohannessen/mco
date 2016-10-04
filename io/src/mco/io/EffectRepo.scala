@@ -2,10 +2,9 @@ package mco.io
 
 import scala.language.higherKinds
 
-import cats.data.Xor
 import cats.syntax.functor._
 import cats.{Functor, ~>}
-import mco.{Fail, Package, Repository}
+import mco.{Package, Repository}
 
 class EffectRepo[F[_], G[_]: Functor, S](wrapped: Repository[F, S], nat: F ~> G)
   extends Repository[G, Unit]
@@ -19,9 +18,9 @@ class EffectRepo[F[_], G[_]: Functor, S](wrapped: Repository[F, S], nat: F ~> G)
   override def change(oldKey: String, updates: Package): G[Self] =
     nat(wrapped change (oldKey, updates)) map wrap
 
-  override def add(f: String): G[Fail Xor Self] =
-    nat(wrapped add f) map (_ map wrap)
+  override def add(f: String): G[Self] =
+    nat(wrapped add f) map wrap
 
-  override def remove(s: String): G[Fail Xor Self] =
-    nat(wrapped remove s) map (_ map wrap)
+  override def remove(s: String): G[Self] =
+    nat(wrapped remove s) map wrap
 }

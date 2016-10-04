@@ -2,14 +2,12 @@ package mco.config
 
 
 import scala.language.higherKinds
-import scala.util.{Failure, Success, Try}
+import scala.util.Try
 
 import cats.instances.try_._
 import cats.instances.vector._
-import cats.syntax.functor._
-import cats.syntax.flatMap._
-import cats.syntax.traverse._
-import cats.{Monad, Functor, ~>}
+import cats.syntax.all._
+import cats.{Functor, Monad, ~>}
 import mco._
 import mco.io.files.{IO, Path}
 import mco.io.{EffectRepo, FolderSource, IsolatedRepo}
@@ -24,16 +22,9 @@ object LoadedRepo {
   private def media(c: RepoConfig): Try[Vector[Media.Companion[IO]]] =
     c.media traverse CompileAs[Media.Companion[IO]]
 
-  private def source(c: RepoConfig): IO[Try[Source[IO]]] = {
-    val t: Try[IO[Try[Source[IO]]]] = for {
-      cls <- classifier(c: RepoConfig)
-      ms <- media(c)
-    } yield for {
-      opt <- FolderSource(c.source, cls, ms: _*)
-    } yield opt.fold[Try[Source[IO]]](Failure(new NoSuchElementException))(Success(_))
-
-    IO.sequence(t) map (_ flatMap identity)
-  }
+  private def source(c: RepoConfig): IO[Source[IO]] =
+    IO.sequence(classifier(c) |@| media(c) map ((cls, ms) => FolderSource(c.source, cls, ms: _*)))
+      .absorbTry
 
   private def repo[F[_]: Functor](c: RepoConfig, nat: IO ~> F)(src: Source[IO]): F[Repository[F, Unit]] =
     (c.kind, c.persistency) match {
@@ -46,7 +37,6 @@ object LoadedRepo {
           .map(new EffectRepo(_, nat))
     }
 
-  def apply[F[_]: Monad](c: RepoConfig, nat: IO ~> F): F[Try[Repository[F, Unit]]] = {
-    nat(source(c)) map (_ map repo(c, nat)) flatMap (x => x.sequence)
-  }
+  def apply[F[_]: Monad](c: RepoConfig, nat: IO ~> F): F[Repository[F, Unit]] =
+    nat(source(c)) flatMap repo(c, nat)
 }

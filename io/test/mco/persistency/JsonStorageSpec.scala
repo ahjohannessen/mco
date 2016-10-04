@@ -1,27 +1,15 @@
 package mco.persistency
 
-import mco._
-import mco.io.files.{IO, Path}
-import mco.io.IOInterpreters._
-import FSDsl._
-import cats.data.Xor
 import cats.syntax.applicative._
-import cats.syntax.xor._
-import rapture.json._
-import jsonBackends.jawn._
+import mco._
+import mco.io.IOInterpreters.FSDsl._
 import mco.io.Stubs
+import mco.io.files.{IO, Path}
+import rapture.json._
+import rapture.json.jsonBackends.jawn._
 
 class JsonStorageSpec extends UnitSpec {
-  "JsonStorage#apply" should "do nothing if given NoOp value" in {
-    val noop = NoOp(Vector(1, 5, 9))
-    val io = storage(noop)
-
-    val (state, result) = StubIORunner(initialState).apply(io)
-    state should equal (initialState)
-    result should equal (Vector(1, 5, 9))
-  }
-
-  it should "read file and give result if provided Read value" in {
+  "JsonStorage#apply" should "read file and give result if provided Read value" in {
     val io = storage(Read)
     val result = StubIORunner(initialState).value(io)
     result should equal (Vector(17, 25, 83))
@@ -42,7 +30,7 @@ class JsonStorageSpec extends UnitSpec {
 
   "JsonStorage#applyToLeft" should "use JsonStorage#apply on left element" in {
     val runner = StubIORunner(initialState)
-    for (op <- Seq(Read, NoOp(Vector(1,2,3)), Update(Vector(), Vector(1, 2, 5)))) {
+    for (op <- Seq(Read, Update(Vector(), Vector(1, 2, 5)))) {
       val obj = new Object
       val applyResult = storage(op)
       val (applyResult2, objResult)= storage.applyToLeft((op, obj))
@@ -66,7 +54,7 @@ class JsonStorageSpec extends UnitSpec {
     val io = repo
       .flatMap(_.change("foo", Package("foo", Set())))
       .flatMap(_.add("bar"))
-      .flatMap(xor => xor.toOption.getOrElse(fail()).remove("baz"))
+      .flatMap(_.remove("baz"))
 
     val state = StubIORunner(initialState).state(io)
     deepGet(Path("state.json"))(state) should equal (Some(obj("[17,25,83,1,2,3]".getBytes)))
@@ -88,13 +76,13 @@ class JsonStorageSpec extends UnitSpec {
       override def packages: Traversable[Package] = Traversable()
 
       override def change(oldKey: String, updates: Package): IO[Self] =
-        fakeRepo(state :+ 1).widen.pure[IO]
+        fakeRepo(state :+ 1).pure[IO]
 
-      override def add(f: String): IO[Fail Xor Self] =
-        fakeRepo(state :+ 2).widen.right[Fail].pure[IO]
+      override def add(f: String): IO[Self] =
+        fakeRepo(state :+ 2).pure[IO]
 
-      override def remove(s: String): IO[Fail Xor Self] =
-        fakeRepo(state :+ 3).widen.right[Fail].pure[IO]
+      override def remove(s: String): IO[Self] =
+        fakeRepo(state :+ 3).pure[IO]
     }
 
   private def storage = new JsonStorage[Vector[Int]](Path("state.json"))
