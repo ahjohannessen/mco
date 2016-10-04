@@ -7,6 +7,7 @@ import scala.util.control.NonFatal
 import cats.{Monad, MonadError, RecursiveTailRecM}
 import cats.data.{Xor, XorT}
 import cats.syntax.functor._
+import cats.syntax.cartesian._
 
 package object files {
   type IO[A] = XorT[MonadicIO.ops.FreeIO, Fail, A]
@@ -26,6 +27,7 @@ package object files {
 
   implicit class FailSyntax(val fail: Fail) extends AnyVal {
     def as[A]: IO[A] = IO.raiseError[A](fail)
+    def when(p: Boolean): IO[Unit] = if (p) fail.as[Unit] else IO.pure(())
   }
 
   implicit def freeIOtoErrorIO[A](freeIO: MonadicIO.ops.FreeIO[A]): IO[A] =
@@ -46,4 +48,8 @@ package object files {
   def createDirectory(path: Path) : IO[Unit] = ops.createDirectory(path)
   def copyTree(source: Path, dest: Path) : IO[Unit] = ops.copyTree(source, dest)
   def moveTree(source: Path, dest: Path) : IO[Unit] = ops.moveTree(source, dest)
+
+  def pathExists(path: Path) : IO[Boolean] =
+    ops.isDirectory(path) |@| ops.isRegularFile(path) map (_ || _)
+
 }

@@ -15,6 +15,7 @@ class FolderSourceSpec extends UnitSpec {
       "folder" -> dir(),
       "archive.zip" -> obj()
     ),
+    "folder" -> dir(),
     "another file" -> obj(),
     "another folder" -> dir("named" -> obj()),
     "target" -> dir()
@@ -58,6 +59,20 @@ class FolderSourceSpec extends UnitSpec {
     old should not be empty
   }
 
+  it should "fail if the target element does not exist" in {
+    val src = run.value(FolderSource("storage", classifier, media()))
+    a [Fail.MissingResource] shouldBe thrownBy {
+      run(src add "non-existent folder")
+    }
+  }
+
+  it should "fail with NameConflict if the element with same key exists in the source dir" in {
+    val src = run.value(FolderSource("storage", classifier, media("storage/folder" -> randoms)))
+    a [Fail.NameConflict] shouldBe thrownBy {
+      run(src add "folder")
+    }
+  }
+
   "FolderSource#remove" should "remove file or folder from filesystem & source" in {
     val src = run.value(FolderSource("storage", classifier, media("storage/folder" -> emptys, "storage/archive.zip" -> emptys)))
     val (state, value) = run(src remove "folder")
@@ -78,5 +93,11 @@ class FolderSourceSpec extends UnitSpec {
     folderContents.get("zondar") shouldEqual deepGet(Path("storage/folder"))(stub)
   }
 
-  // TODO - specify failure conditions for FolderSource methods
+  it should "fail if the element with same name already exists" in {
+    val src = run.value(FolderSource("storage", classifier, media("storage/folder" -> emptys, "storage/archive.zip" -> emptys)))
+
+    a [Fail.NameConflict] shouldBe thrownBy {
+      run(src rename ("folder", "archive.zip"))
+    }
+  }
 }
