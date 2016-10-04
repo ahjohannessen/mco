@@ -1,7 +1,6 @@
-package mco.io
+package mco
 
 import cats._
-import mco.{Package, Repository, UnitSpec}
 
 class EffectRepoSpec extends UnitSpec {
   "EffectRepo#state" should "just be Unit value" in {

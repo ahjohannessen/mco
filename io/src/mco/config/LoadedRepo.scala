@@ -10,7 +10,7 @@ import cats.syntax.all._
 import cats.{Functor, Monad, ~>}
 import mco._
 import mco.io.files.{IO, Path}
-import mco.io.{EffectRepo, FolderSource, IsolatedRepo}
+import mco.io.{FolderSource, IsolatedRepo}
 import mco.persistency.JsonStorage
 import mco.persistency.JsonStorage.Converters._
 import rapture.json.jsonBackends.jawn._

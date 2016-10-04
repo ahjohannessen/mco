@@ -1,4 +1,4 @@
-package mco
+package mco.io
 
 sealed trait Fail extends Throwable {
   def rethrow(): Nothing = throw this

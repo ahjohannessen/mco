@@ -1,9 +1,10 @@
 package mco.config
 
-import mco.{Fail, UnitSpec}
+import mco.UnitSpec
 import mco.io.IOInterpreters._
 import FSDsl._
 import cats.arrow.FunctionK
+import mco.io.Fail
 import mco.io.files.IO
 import org.scalatest.tagobjects.Slow
 

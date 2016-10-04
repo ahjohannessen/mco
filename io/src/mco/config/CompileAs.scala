@@ -6,7 +6,7 @@ import scala.tools.reflect.ToolBox
 import scala.util.Try
 import scala.util.control.NonFatal
 
-import mco.Fail
+import mco.io.Fail
 
 object CompileAs {
   def apply[A: TypeTag](fullName: String): Try[A] = {

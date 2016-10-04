@@ -1,7 +1,7 @@
 package mco.io
 
 import cats.syntax.option._
-import mco.{Fail, UnitSpec}
+import mco.UnitSpec
 import mco.io.files._
 import mco.io.IOInterpreters._
 import mco.io.IOInterpreters.FSDsl._

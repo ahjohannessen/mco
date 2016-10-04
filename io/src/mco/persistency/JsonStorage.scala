@@ -8,8 +8,7 @@ import cats.syntax.applicative._
 import cats.syntax.bifunctor._
 import cats.syntax.functor._
 import cats.~>
-import mco._
-import mco.io.EffectRepo
+import mco.{EffectRepo, _}
 import mco.io.files._
 import rapture.core.modes.throwExceptions._
 import rapture.json._

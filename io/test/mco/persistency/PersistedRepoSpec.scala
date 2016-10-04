@@ -1,7 +1,8 @@
 package mco.persistency
 
 import cats.Id
-import mco.{Fail, Package, Repository, UnitSpec}
+import mco.io.Fail
+import mco.{Package, Repository, UnitSpec}
 
 class PersistedRepoSpec extends UnitSpec {
   "PersistedRepo" should "lift state updates to methods return values" in {

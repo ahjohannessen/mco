@@ -7,7 +7,6 @@ import scala.util.control.NonFatal
 import cats.{Monad, MonadError, RecursiveTailRecM}
 import cats.data.{Xor, XorT}
 import cats.syntax.functor._
-import mco.Fail
 
 package object files {
   type IO[A] = XorT[MonadicIO.ops.FreeIO, Fail, A]

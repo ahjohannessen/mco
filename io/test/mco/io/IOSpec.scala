@@ -2,7 +2,7 @@ package mco.io
 
 import scala.util.Failure
 
-import mco.{Fail, UnitSpec}
+import mco.UnitSpec
 import mco.io.IOInterpreters.FSDsl._
 import mco.io.files._
 

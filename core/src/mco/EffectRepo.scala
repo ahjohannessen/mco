@@ -1,10 +1,9 @@
-package mco.io
+package mco
 
 import scala.language.higherKinds
 
 import cats.syntax.functor._
 import cats.{Functor, ~>}
-import mco.{Package, Repository}
 
 class EffectRepo[F[_], G[_]: Functor, S](wrapped: Repository[F, S], nat: F ~> G)
   extends Repository[G, Unit]
