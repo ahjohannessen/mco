@@ -1,14 +1,25 @@
 language: scala
+
 scala:
   - 2.11.8
+
+sudo: false
 
 jdk:
   - oraclejdk8
 
 script:
   - sbt clean coverage test
+  - find $HOME/.sbt -name "*.lock" | xargs rm
+  - find $HOME/.ivy2 -name "ivydata-*.properties" | xargs rm
 
 after_script:
   - sbt coverageReport
   - sbt coverageAggregate
   - sbt codacyCoverage
+
+
+cache:
+  directories:
+    - $HOME/.ivy2/cache/
+    - $HOME/.sbt/boot/
