@@ -20,14 +20,14 @@ package object files {
 
     def absorbTry[B](implicit ev: A <:< Try[B]): IO[B] =
       io.flatMap(x => Xor.fromTry(x).fold({
-        case fail: Fail => fail.as[B]
-        case NonFatal(ex) => Fail.Uncaught(ex).as[B]
+        case fail: Fail => fail.io[B]
+        case NonFatal(ex) => Fail.Uncaught(ex).io[B]
       }, IO.pure))
   }
 
   implicit class FailSyntax(val fail: Fail) extends AnyVal {
-    def as[A]: IO[A] = IO.raiseError[A](fail)
-    def when(p: Boolean): IO[Unit] = if (p) fail.as[Unit] else IO.pure(())
+    def io[A]: IO[A] = IO.raiseError[A](fail)
+    def when(p: Boolean): IO[Unit] = if (p) fail.io[Unit] else IO.pure(())
   }
 
   implicit def freeIOtoErrorIO[A](freeIO: MonadicIO.ops.FreeIO[A]): IO[A] =

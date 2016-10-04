@@ -13,8 +13,10 @@ final class FolderSource private (path: Path, media: Path => IO[Option[(Package,
     conflict <- pathExists(path / to)
     _ <- Fail.NameConflict(to) when conflict
     _ <- moveTree(path / from, path / to)
-    m <- media(path / to)
-  } yield (new FolderSource(path, media), m.get._2)
+    renamedOpt <- media(path / to)
+    renamed <- renamedOpt map IO.pure getOrElse Fail.InvariantViolation().io
+    (_, m) = renamed
+  } yield (new FolderSource(path, media): Source[IO], m)
 
   override def add(f: String): IO[Source[IO]] = for {
     exists <- pathExists(Path(f))

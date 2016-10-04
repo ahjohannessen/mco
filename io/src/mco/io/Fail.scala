@@ -16,4 +16,7 @@ object Fail {
 
   case class UnexpectedType(name: String, expected: String)
     extends RuntimeException(s"Expected $name to be $expected") with Fail
+
+  case class InvariantViolation()
+    extends RuntimeException("Unknown invariant violation") with Fail
 }

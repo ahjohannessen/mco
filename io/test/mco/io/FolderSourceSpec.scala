@@ -100,4 +100,11 @@ class FolderSourceSpec extends UnitSpec {
       run(src rename ("folder", "archive.zip"))
     }
   }
+
+  it should "fail with InvariantViolation if media cannot be created for file after renaming" in {
+    val src = run.value(FolderSource("storage", classifier, media("storage/folder" -> emptys)))
+    a [Fail.InvariantViolation] shouldBe thrownBy {
+      run(src rename ("folder", "zondar"))
+    }
+  }
 }
