@@ -73,10 +73,8 @@ class IsolatedRepo private (source: Source[IO], target: Path, known: Map[String,
         .filter(_.isInstalled)
         .map(c => c.key -> (targetDir / c.key).asString)
 
-      _ <- media.copy(installable.toMap)
-      nextPkg = pkg.copy(contents = nextContents, isInstalled = true)
-      nextKnown = known.updated(pkg.key, (nextPkg, media))
-    } yield new IsolatedRepo(source, target, nextKnown)
+      _ <- media copy installable.toMap
+    } yield withUpdated(pkg.copy(contents = nextContents, isInstalled = true), media)
   }
 
   private def uninstall(key: String) = {
@@ -85,9 +83,12 @@ class IsolatedRepo private (source: Source[IO], target: Path, known: Map[String,
     val nextContents = for (content <- pkg.contents) yield content.copy(isInstalled = false)
     for {
       _ <- removeFile(targetDir)
-      nextPkg = pkg.copy(contents = nextContents, isInstalled = false)
-      nextKnown = known.updated(pkg.key, (nextPkg, media))
-    } yield new IsolatedRepo(source, target, nextKnown)
+    } yield withUpdated(pkg.copy(contents = nextContents, isInstalled = false), media)
+  }
+
+  private def withUpdated(pkg: Package, media: Media[IO]) ={
+    val nextKnown = known.updated(pkg.key, (pkg, media))
+    new IsolatedRepo(source, target, nextKnown)
   }
 
   override def add(f: String): IO[Self] = {
