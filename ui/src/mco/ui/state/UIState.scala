@@ -8,4 +8,3 @@ case class UIState(
   packages: Seq[Package],
   currentPackage: Option[Package] = None
 )
-

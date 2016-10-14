@@ -1,23 +1,22 @@
-package mco.ui.graphical
+package mco.ui.desktop
+
+import java.util.Base64
 
 import scalafx.Includes._
-import scalafx.application.JFXApp
+import scalafx.application.{JFXApp, Platform}
 import scalafx.beans.property.{BooleanProperty, ObjectProperty}
 import scalafx.geometry.{Insets, Pos}
 import scalafx.scene.Scene
 import scalafx.scene.control.TableColumn._
 import scalafx.scene.control._
 import scalafx.scene.control.cell.CheckBoxTableCell
-import scalafx.scene.input.MouseEvent
-import scalafx.scene.layout.{HBox, VBox}
+import scalafx.scene.layout.{HBox, Priority, Region, VBox}
 
-import cats.instances.all._
-import cats.syntax.all._
-import mco.{Content, ContentKind, Package}
-import mco.ui.graphical.ObservableFX._
+import mco.ui.desktop.ObservableFX._
 import mco.ui.state._
-import monix.reactive.subjects.{PublishSubject, ReplaySubject}
+import mco.{Content, ContentKind, Package}
 import monix.execution.Scheduler.Implicits.global
+import monix.reactive.subjects.PublishSubject
 
 trait MainView {
   def mkStage: JFXApp.PrimaryStage = {
@@ -32,6 +31,7 @@ trait MainView {
       height = 600
       title = "Mod Collection Organizer"
       scene = new Scene {
+        stylesheets += "/mco.ui.desktop/no-focus-outline.css"
         root = new TabPane {
           tabs = (states zip actions).map{case (states, actions) => uiTab(act => { actions.onNext(act); ()})(states)}
         }
@@ -43,13 +43,19 @@ trait MainView {
     new Tab {
       text -<< states.map(_.repoName)
       closable = false
-      content = new HBox {
+      content = new HBox { contentRoot =>
+        padding = Insets(10)
         children = Seq(
-          packageListing(act)(states map (_.packages)),
+          packageListing(act)(states),
           new VBox {
+            padding = Insets(0, 0, 0, 10)
+            prefWidth <== (contentRoot.width / 3)
             children = Seq(
-              new Label("Images not yet supported"),
+              new Label("Images not yet supported") {
+                vgrow = Priority.Always
+              },
               new TableView[Content] {
+                vgrow = Priority.Always
                 items =<< states.map(_.currentPackage).map(_.map(_.contents).getOrElse(Set.empty[Content]))
                 columns ++= Seq(
                   new TableColumn[Content, String] {
@@ -59,16 +65,24 @@ trait MainView {
                 )
               },
               new HBox {
-                alignmentInParent = Pos.CenterLeft
-                padding = Insets(10)
+                hgrow = Priority.Always
+                alignmentInParent = Pos.CenterRight
+                padding = Insets(10, 0, 10, 0)
                 spacing = 10
                 fillWidth = true
                 children = Seq(
+                  new Region {
+                    minWidth = 10
+                    maxWidth = Double.MaxValue
+                    hgrow = Priority.Always
+                  },
                   new Button("View README") {
+                    prefWidth = 125
                     disable -<< states.map(!_.currentPackage.exists(_.contents.exists(_.kind == ContentKind.Doc)))
                     onMouseClicked = handle { sys.error("Readme not implemented") }
                   },
                   new Button {
+                    prefWidth = 125
                     private val current = states.map(_.currentPackage)
                     text -<< current
                       .map(_.forall(!_.isInstalled))
@@ -82,7 +96,6 @@ trait MainView {
 
 
                     defaultButton = true
-                    style = "-fx-font-weight: bold"
                   }
                 )
               }
@@ -92,9 +105,19 @@ trait MainView {
       }
     }
 
-  def packageListing: UIComponent[Seq[Package], TableView[Package]] = act => states =>
+  def packageListing: UIComponent[UIState, TableView[Package]] = act => states =>
     new TableView[Package] { table =>
-      items =<< states
+      states
+        .map(s => s.currentPackage.map(s.packages.indexOf))
+        .foreach(_.foreach(i => Platform.runLater {
+          table.selectionModel.value.clearAndSelect(i)
+          table.focusModel.value.focus(i)
+        }))
+      items =<< states.map(_.packages)
+
+      hgrow = Priority.Always
+
+      columnResizePolicy = TableView.ConstrainedResizePolicy
 
       rowFactory = _ => new TableRow[Package] {
         onMouseClicked = handle {
@@ -105,7 +128,10 @@ trait MainView {
       columns ++= Seq(
         new TableColumn[Package, Package] {
           text = "S."
+          maxWidth = 32
+          resizable = false
           cellFactory = column => new CheckBoxTableCell[Package, Package](i => BooleanProperty(table.items.getValue.get(i).isInstalled)) {
+            padding = Insets(0)
             onMouseClicked = handle {
               val x = item.value
               act(if (!x.isInstalled) InstallPackage(x) else UninstallPackage(x))
@@ -115,6 +141,7 @@ trait MainView {
 
         },
         new TableColumn[Package, String] {
+          maxWidth <== table.width - 32
           text = "Package name"
           cellValueFactory = { s => ObjectProperty(s.value.key) }
         })

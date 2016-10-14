@@ -2,7 +2,7 @@ package mco.ui
 
 import scalafx.application.JFXApp
 
-import mco.ui.graphical.MainView
+import mco.ui.desktop.MainView
 
 object Runner extends JFXApp with MainView {
   stage = mkStage

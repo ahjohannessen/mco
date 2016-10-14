@@ -1,4 +1,4 @@
-package mco.ui.graphical
+package mco.ui.desktop
 
 import javafx.beans.property.ObjectProperty
 import javafx.collections.ObservableList
@@ -35,6 +35,6 @@ object ObservableFX {
   }
 
   implicit class ObservableOps[A](val self: Observable[A]) extends AnyVal {
-    def !![B](implicit conv: A => B): Observable[B] = self map conv
+    def !![B](implicit conv: A => B): Observable[B] = self map conv // TODO: might be redundant
   }
 }
