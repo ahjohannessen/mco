@@ -23,3 +23,8 @@ cache:
   directories:
     - $HOME/.ivy2/cache/
     - $HOME/.sbt/boot/
+
+addons:
+  apt:
+    packages:
+      oracle-java8-installer
