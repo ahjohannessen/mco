@@ -5,6 +5,6 @@ import mco.Package
 
 case class UIState(
   repoName: String,
-  packages: Seq[Package],
+  packages: Vector[Package],
   currentPackage: Option[Package] = None
 )

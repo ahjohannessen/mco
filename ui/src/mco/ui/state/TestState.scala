@@ -5,7 +5,7 @@ import mco.{Content, ContentKind, Package}
 
 object TestState {
   def initial: Vector[UIState] = Vector(
-    UIState("repo1", Seq(
+    UIState("repo1", Vector(
       Package("test package", Set(), isInstalled = true),
       Package("test package 2", Set(), isInstalled = false),
       Package("test package 3", Set(
