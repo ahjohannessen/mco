@@ -83,72 +83,8 @@ trait MainView {
               new Label("Images not yet supported") {
                 vgrow = Priority.Always
               },
-              new TableView[Content] { table =>
-                columnResizePolicy = TableView.ConstrainedResizePolicy
-
-                editable = true
-                vgrow = Priority.Always
-                items =<< states.map(_.currentPackage).map(_.map(_.contents).getOrElse(Set.empty[Content]))
-                columns ++= Seq(
-                  new TableColumn[Content, String] {
-                    maxWidth = Double.MaxValue
-                    text = "Name"
-                    cellValueFactory = { c => ObjectProperty(c.value.key) }
-                  },
-                  new TableColumn[Content, ContentKind] {
-                    minWidth = 75
-                    text = "Kind"
-                    cellFactory = _ => new ChoiceBoxTableCell[Content, ContentKind] {
-                      items ++= Seq(ContentKind.Mod, ContentKind.Doc, ContentKind.Garbage)
-                      editable = true
-                      converter = StringConverter(
-                        ContentKind.fromString _ andThen (_.orNull),
-                        ContentKind.asString
-                      )
-                    }
-                    cellValueFactory = {s => ObjectProperty(s.value.kind)}
-
-                    onEditCommit = (ev: CellEditEvent[Content, ContentKind]) => {
-                      act(UpdateContentKind(ev.rowValue.key, ev.newValue))
-                    }
-                  }
-                )
-              },
-              new HBox {
-                hgrow = Priority.Always
-                alignmentInParent = Pos.CenterRight
-                padding = Insets(10, 0, 10, 0)
-                spacing = 10
-                fillWidth = true
-                children = Seq(
-                  new Region {
-                    minWidth = 10
-                    maxWidth = Double.MaxValue
-                    hgrow = Priority.Always
-                  },
-                  new Button("View README") {
-                    prefWidth = 125
-                    disable -<< states.map(!_.currentPackage.exists(_.contents.exists(_.kind == ContentKind.Doc)))
-                    onMouseClicked = handle { sys.error("Readme not implemented") }
-                  },
-                  new Button {
-                    prefWidth = 125
-                    private val current = states.map(_.currentPackage)
-                    text -<< current
-                      .map(_.forall(!_.isInstalled))
-                      .map(if (_) "Install" else "Uninstall")
-
-                    disable -<< current.map(_.isEmpty)
-
-                    onAction -<< current.collect { case Some(x) => handle {
-                      act(if (!x.isInstalled) InstallPackage(x) else UninstallPackage(x))
-                    }}
-
-
-                    defaultButton = true
-                  }
-                )
-              }
+              contentTable(act)(states.map(_.currentPackage).map(_.map(_.contents).getOrElse(Set.empty[Content]))),
+              buttons(act)(states.map(_.currentPackage))
             )
           }
         )
@@ -213,4 +149,74 @@ trait MainView {
           }
         })
     }
+
+  def buttons: UIComponent[Option[Package], HBox] = act => states =>
+    new HBox {
+      hgrow = Priority.Always
+      alignmentInParent = Pos.CenterRight
+      padding = Insets(10, 0, 10, 0)
+      spacing = 10
+      children = Seq(
+        new Region {
+          minWidth = 10
+          maxWidth = Double.MaxValue
+          hgrow = Priority.Always
+        },
+        new Button("View README") {
+          prefWidth = 125
+
+          disable -<< states
+            .map(!_.exists(_.contents.exists(_.kind == ContentKind.Doc)))
+
+          onMouseClicked = handle { sys.error("Readme not implemented") }
+        },
+        new Button {
+          prefWidth = 125
+          text -<< states
+            .map(_.forall(!_.isInstalled))
+            .map(if (_) "Install" else "Uninstall")
+
+          disable -<< states.map(_.isEmpty)
+
+          onAction -<< states.collect { case Some(x) => handle {
+            act(if (!x.isInstalled) InstallPackage(x) else UninstallPackage(x))
+          }}
+
+
+          defaultButton = true
+        }
+      )
+    }
+
+  def contentTable: UIComponent[Set[Content], TableView[Content]] = act => states => new TableView[Content] { table =>
+    columnResizePolicy = TableView.ConstrainedResizePolicy
+
+    editable = true
+    vgrow = Priority.Always
+    items =<< states
+    columns ++= Seq(
+      new TableColumn[Content, String] {
+        maxWidth = Double.MaxValue
+        text = "Name"
+        cellValueFactory = { c => ObjectProperty(c.value.key) }
+      },
+      new TableColumn[Content, ContentKind] {
+        minWidth = 75
+        text = "Kind"
+        cellFactory = _ => new ChoiceBoxTableCell[Content, ContentKind] {
+          items ++= Seq(ContentKind.Mod, ContentKind.Doc, ContentKind.Garbage)
+          editable = true
+          converter = StringConverter(
+            ContentKind.fromString _ andThen (_.orNull),
+            ContentKind.asString
+          )
+        }
+        cellValueFactory = {s => ObjectProperty(s.value.kind)}
+
+        onEditCommit = (ev: CellEditEvent[Content, ContentKind]) => {
+          act(UpdateContentKind(ev.rowValue.key, ev.newValue))
+        }
+      }
+    )
+  }
 }
