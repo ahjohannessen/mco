@@ -10,12 +10,21 @@ import scalafx.delegate.SFXDelegate
 
 import monix.execution.Scheduler.Implicits.global
 import monix.reactive.Observable
+import monix.reactive.subjects.BehaviorSubject
 
 object ObservableFX {
   implicit class PropertyOps[T, J](val self: Property[T, J]) extends AnyVal {
     def -<<(obs: Observable[T]): Unit = { obs.foreach(x => runLater(self.update(x))); () }
     def =<<[B](obs: Observable[_ <: Iterable[B]])(implicit ev: T <:< ObservableList[B]): Unit = {
       obs.foreach(list => runLater(fillCollection(self.value, list))); ()
+    }
+    def observe(): Observable[T] = {
+      val subj = BehaviorSubject(self.value)
+      self.onChange {
+        subj.onNext(self.value)
+        ()
+      }
+      subj
     }
   }
 

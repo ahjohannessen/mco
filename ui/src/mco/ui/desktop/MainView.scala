@@ -1,6 +1,7 @@
 package mco.ui.desktop
 
-import java.util.Base64
+
+import java.io.{PrintWriter, StringWriter}
 
 import scalafx.Includes._
 import scalafx.application.{JFXApp, Platform}
@@ -9,9 +10,12 @@ import scalafx.geometry.{Insets, Pos}
 import scalafx.scene.Scene
 import scalafx.scene.control.TableColumn._
 import scalafx.scene.control._
-import scalafx.scene.control.cell.CheckBoxTableCell
+import scalafx.scene.control.cell.{CheckBoxTableCell, ChoiceBoxTableCell, TextFieldTableCell}
 import scalafx.scene.layout.{HBox, Priority, Region, VBox}
+import scalafx.util.StringConverter
+import scalafx.util.converter.DefaultStringConverter
 
+import cats.data.Xor
 import mco.ui.desktop.ObservableFX._
 import mco.ui.state._
 import mco.{Content, ContentKind, Package}
@@ -19,11 +23,34 @@ import monix.execution.Scheduler.Implicits.global
 import monix.reactive.subjects.PublishSubject
 
 trait MainView {
-  def mkStage: JFXApp.PrimaryStage = {
+  def mkStage(initial: Vector[UIState],
+              runAction: (UIState, UIAction) => Throwable Xor UIState): JFXApp.PrimaryStage = {
     val initialStates = initial
     val actions = Vector.fill(initialStates.length)(PublishSubject[UIAction]())
-    val states = (initialStates zip actions) map {
-      case (state, action) => action.scan(state)(runAction).share.startWith(Seq(state))
+    val states = (initialStates zip actions) map { case (state, action) =>
+      action
+        .scan(state)((state, action) => {
+          runAction(state, action).fold(err => {
+            new Alert(Alert.AlertType.Error) {
+              title = "Error"
+              headerText = "Could not complete operation"
+              contentText = err.getMessage
+              dialogPane().expandableContent = new TextArea {
+                text = {
+                  val sw = new StringWriter()
+                  val pw = new PrintWriter(sw)
+                  err.printStackTrace(pw)
+                  pw.close()
+                  sw.toString
+                }
+                editable = false
+              }
+            }.showAndWait()
+            state
+          }, identity)
+        })
+        .share
+        .startWith(Seq(state))
     }
 
     new JFXApp.PrimaryStage {
@@ -33,7 +60,9 @@ trait MainView {
       scene = new Scene {
         stylesheets += "/mco.ui.desktop/no-focus-outline.css"
         root = new TabPane {
-          tabs = (states zip actions).map{case (states, actions) => uiTab(act => { actions.onNext(act); ()})(states)}
+          tabs = (states zip actions) map {
+            case (s, a) => uiTab(act => { a.onNext(act); ()})(s)
+          }
         }
       }
     }
@@ -54,13 +83,34 @@ trait MainView {
               new Label("Images not yet supported") {
                 vgrow = Priority.Always
               },
-              new TableView[Content] {
+              new TableView[Content] { table =>
+                columnResizePolicy = TableView.ConstrainedResizePolicy
+
+                editable = true
                 vgrow = Priority.Always
                 items =<< states.map(_.currentPackage).map(_.map(_.contents).getOrElse(Set.empty[Content]))
                 columns ++= Seq(
                   new TableColumn[Content, String] {
+                    maxWidth = Double.MaxValue
                     text = "Name"
                     cellValueFactory = { c => ObjectProperty(c.value.key) }
+                  },
+                  new TableColumn[Content, ContentKind] {
+                    minWidth = 75
+                    text = "Kind"
+                    cellFactory = _ => new ChoiceBoxTableCell[Content, ContentKind] {
+                      items ++= Seq(ContentKind.Mod, ContentKind.Doc, ContentKind.Garbage)
+                      editable = true
+                      converter = StringConverter(
+                        ContentKind.fromString _ andThen (_.orNull),
+                        ContentKind.asString
+                      )
+                    }
+                    cellValueFactory = {s => ObjectProperty(s.value.kind)}
+
+                    onEditCommit = (ev: CellEditEvent[Content, ContentKind]) => {
+                      act(UpdateContentKind(ev.rowValue.key, ev.newValue))
+                    }
                   }
                 )
               },
@@ -90,7 +140,7 @@ trait MainView {
 
                     disable -<< current.map(_.isEmpty)
 
-                    onMouseClicked -<< current.collect{ case Some(x) => handle {
+                    onAction -<< current.collect { case Some(x) => handle {
                       act(if (!x.isInstalled) InstallPackage(x) else UninstallPackage(x))
                     }}
 
@@ -113,6 +163,8 @@ trait MainView {
           table.selectionModel.value.clearAndSelect(i)
           table.focusModel.value.focus(i)
         }))
+
+      editable = true
       items =<< states.map(_.packages)
 
       hgrow = Priority.Always
@@ -121,7 +173,7 @@ trait MainView {
 
       rowFactory = _ => new TableRow[Package] {
         onMouseClicked = handle {
-          if (!this.empty.value) act(SetActivePackage(this.item.value))
+          if (!empty.value) act(SetActivePackage(this.item.value))
         }
       }
 
@@ -130,20 +182,35 @@ trait MainView {
           text = "S."
           maxWidth = 32
           resizable = false
-          cellFactory = column => new CheckBoxTableCell[Package, Package](i => BooleanProperty(table.items.getValue.get(i).isInstalled)) {
+          editable = true
+          cellFactory = _ => new CheckBoxTableCell[Package, Package](i => {
+            def pkg = table.items.getValue.get(i)
+            val prop = BooleanProperty(pkg.isInstalled)
+            prop.observe()
+              .tail
+              .foreach(b => act(if (b) InstallPackage(pkg) else UninstallPackage(pkg)))
+            prop
+          }) {
             padding = Insets(0)
-            onMouseClicked = handle {
-              val x = item.value
-              act(if (!x.isInstalled) InstallPackage(x) else UninstallPackage(x))
-            }
           }
-          cellValueFactory = { s => ObjectProperty(s.value) }
-
         },
         new TableColumn[Package, String] {
           maxWidth <== table.width - 32
           text = "Package name"
-          cellValueFactory = { s => ObjectProperty(s.value.key) }
+          editable = true
+          cellFactory = _ => new TextFieldTableCell[Package, String](new DefaultStringConverter()) {
+            editable = true
+          }
+          cellValueFactory = s => { ObjectProperty(s.value.key) }
+
+          onEditCommit = (ev: CellEditEvent[Package, String]) => {
+            // Reset value shown in cell to non-updated,
+            // because update might fail later on
+            // underlying model, and if it doesn't, we'll
+            // redraw it anyway
+            table.delegate.refresh()
+            act(RenamePackage(ev.oldValue, ev.newValue))
+          }
         })
     }
 }
