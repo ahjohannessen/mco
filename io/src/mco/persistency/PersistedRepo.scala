@@ -10,6 +10,7 @@ import cats.syntax.functor._
 final class PersistedRepo[M[_]: Functor, S](current: Repository[M, S])
   extends Repository[λ[α => M[(StoreOp[S], α)]], Unit] {
 
+  override def key: String = current.key
   override def state: Unit = ()
 
   override def apply(key: String): Package = current(key)

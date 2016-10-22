@@ -33,6 +33,7 @@ class PersistedRepoSpec extends UnitSpec {
   }
 
   def stub(i: Int = 0): Repository[Id, Int] = new Repository[Id, Int] {
+    override def key: String = "test"
     override def state: Int = i
     override def apply(key: String): Package = Package(key, Set())
     override def packages: Traversable[Package] = Seq(Package("1", Set()), Package("2", Set()))

@@ -30,7 +30,7 @@ class IsolatedRepoSpec extends UnitSpec {
   "IsolatedRepo companion" should "create a repository given a folder" in {
     val repoOpt = for {
       src <- FolderSource("source", Classifiers.enableAll)
-      repo <- IsolatedRepo(src, "target", Set())
+      repo <- IsolatedRepo("test", src, "target", Set())
     } yield repo
 
     noException shouldBe thrownBy {
@@ -46,7 +46,7 @@ class IsolatedRepoSpec extends UnitSpec {
         "source/renamed" -> Set("content1")
       )
     )
-    repo <- IsolatedRepo(src, "target", Set(Package(
+    repo <- IsolatedRepo("test", src, "target", Set(Package(
       "package2",
       Set(Content("readme.txt", ContentKind.Doc), Content("toInstall.txt", ContentKind.Mod))
     )))

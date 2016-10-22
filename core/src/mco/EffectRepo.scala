@@ -8,6 +8,7 @@ import cats.{Functor, ~>}
 class EffectRepo[F[_], G[_]: Functor, S](wrapped: Repository[F, S], nat: F ~> G)
   extends Repository[G, Unit]
 {
+  override def key: String = wrapped.key
   override def state: Unit = ()
   override def apply(key: String): Package = wrapped(key)
   override def packages: Traversable[Package] = wrapped.packages

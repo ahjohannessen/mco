@@ -26,6 +26,8 @@ class EffectRepoSpec extends UnitSpec {
   }
 
   private def stub: Repository[(String, ?), Int] = new Repository[(String, ?), Int] {
+    override def key: String = "stub"
+
     override def state: Int = 42
     override def apply(key: String): Package = Package(key, Set())
     override def packages: Traversable[Package] = Seq(Package("1", Set()), Package("2", Set()))
