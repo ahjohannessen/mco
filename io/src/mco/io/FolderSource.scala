@@ -21,9 +21,9 @@ final class FolderSource private (path: Path, media: Path => IO[Option[(Package,
   override def add(f: String): IO[Source[IO]] = for {
     exists <- pathExists(Path(f))
     _ <- Fail.MissingResource(f) when !exists
-    conflicts <- pathExists(path / f)
+    conflicts <- pathExists(path / Path(f).fileName)
     _ <- Fail.NameConflict(f) when conflicts
-    _ <- copyTree(Path(f), path / f)
+    _ <- copyTree(Path(f), path / Path(f).fileName)
   } yield new FolderSource(path, media)
 
   override def remove(s: String): IO[Source[IO]] =

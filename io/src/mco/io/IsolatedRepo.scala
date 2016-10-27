@@ -95,8 +95,9 @@ class IsolatedRepo private (val key: String, source: Source[IO], target: Path, k
     for {
       nextSource <- source add f
       nextElements <- nextSource.list
-      Some(t) = nextElements find { case (pkg, _) => pkg.key == f }
-    } yield new IsolatedRepo(key, nextSource, target, known + (f -> t)).widen
+      fileName = Path(f).fileName
+      Some(t) = nextElements find { case (pkg, _) => pkg.key == fileName }
+    } yield new IsolatedRepo(key, nextSource, target, known + (fileName -> t)).widen
   }
 
   override def remove(s: String): IO[Self] = {

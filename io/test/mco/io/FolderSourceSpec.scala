@@ -49,11 +49,11 @@ class FolderSourceSpec extends UnitSpec {
     run.value(src2.list).loneElement._1 shouldEqual run.value(enableAll(expectedMedia2))
   }
 
-  "FolderSource#add" should "pull file or folder from filesystem & source" in {
+  "FolderSource#add" should "pull file or folder from filesystem & source, handling subdirs" in {
     val src = run.value(FolderSource("storage", classifier, media()))
-    val state = run.state(src add "another folder")
-    val added = deepGet(Path("storage/another folder"))(state)
-    added shouldEqual dir("named" -> obj()).some
+    val state = run.state(src add "another folder/named")
+    val added = deepGet(Path("storage/named"))(state)
+    added shouldEqual obj().some
 
     val old = deepGet(Path("another folder"))(state)
     old should not be empty

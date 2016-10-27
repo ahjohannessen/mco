@@ -29,6 +29,7 @@ trait MainView {
           .scan(state)(attemptReaction({exec.react _}.tupled andThen exec.attemptRun))
           .share
           .startWith(Seq(state))
+          .doOnError(_.printStackTrace())
 
         runResults map { case (_, uiState) => uiState }
       }
