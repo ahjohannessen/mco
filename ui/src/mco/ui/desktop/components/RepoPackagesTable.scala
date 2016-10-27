@@ -7,6 +7,7 @@ import scalafx.geometry.Insets
 import scalafx.scene.control.TableColumn._
 import scalafx.scene.control.{TableColumn, TableRow, TableView}
 import scalafx.scene.control.cell.{CheckBoxTableCell, TextFieldTableCell}
+import scalafx.scene.input.{DragEvent, TransferMode}
 import scalafx.scene.layout.Priority
 import scalafx.util.converter.DefaultStringConverter
 
@@ -20,6 +21,24 @@ import monix.execution.Scheduler.Implicits.global
 object RepoPackagesTable extends UIComponent[UIState, TableView[Package]] {
   override def apply(states: Observable[UIState], act: (UIAction) => Unit): TableView[Package] =
     new TableView[Package] { table =>
+
+      onDragOver = (ev: DragEvent) => {
+        if (ev.dragboard.hasFiles) {
+          ev.acceptTransferModes(TransferMode.Copy)
+        } else {
+          ev.consume()
+        }
+      }
+
+      onDragDropped = (ev: DragEvent) => {
+        val hadFiles = ev.dragboard.hasFiles
+        if (hadFiles) {
+          act(AddObjects(ev.dragboard.files.map(_.getAbsolutePath).toVector))
+        }
+        ev.setDropCompleted(hadFiles)
+        ev.consume()
+      }
+
       states
         .map(s => s.currentPackage.map(s.packages.indexOf))
         .foreach(_.foreach(i => Platform.runLater {

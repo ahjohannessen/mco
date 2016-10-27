@@ -4,9 +4,7 @@ import scala.util.Try
 
 import cats.arrow.FunctionK
 import cats.instances.vector._
-import cats.syntax.applicative._
-import cats.syntax.functor._
-import cats.syntax.traverse._
+import cats.syntax.all._
 import com.typesafe.config.ConfigFactory
 import mco._
 import mco.config.{LoadedRepo, RepoConfigs}
@@ -47,9 +45,10 @@ object ExecIOState extends ExecState[IO, Repository[IO, Unit]] {
               case c if c.key == contentKey => c.copy(kind = kind)
               case c => c
             })))
+      case AddObjects(paths) => paths.foldM[IO, Repository[IO, Unit]](repo)(_ add _)
 
     }
-    updatedRepo.fproduct(_ => state changeBy action)
+    updatedRepo.fproduct(r => state changeBy action getOrElse loadInitialState(r))
   }
 
   override def loadInitialState(r: Repository[IO, Unit]): UIState = UIState(

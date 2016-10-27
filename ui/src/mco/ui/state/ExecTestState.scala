@@ -2,6 +2,7 @@ package mco.ui.state
 
 import scala.util.Try
 
+import better.files.File
 import cats.instances.try_._
 import cats.syntax.functor._
 import mco.{Content, ContentKind, Package}
@@ -47,6 +48,10 @@ object ExecTestState extends ExecState[Try, UIState] {
       )
       case RenamePackage(_, _) => throw new Exception("Rename not allowed - exception test")
       case UpdateContentKind(_, _) => throw new Exception("Update not allowed - exception test")
+      case AddObjects(paths) =>
+        val addedPackages = paths.map(p => Package(File(p).nameWithoutExtension, Set())).toSet
+        val newPackages = state.packages.toSet ++ addedPackages
+        UIState(state.repoName, newPackages.toVector)
     }).fproduct(identity)
   }
 }
