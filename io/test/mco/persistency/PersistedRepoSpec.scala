@@ -25,11 +25,12 @@ class PersistedRepoSpec extends UnitSpec {
     new PersistedRepo(stub()).state shouldBe { () }
   }
 
-  it should "delegate #apply and #packages to wrapped repo" in {
+  it should "delegate #key, #apply and #packages to wrapped repo" in {
     val repo = stub(11)
     val persisted = new PersistedRepo(repo)
     for (s <- 1 to 10) persisted(s.toString) should equal (repo(s.toString))
     persisted.packages should equal (repo.packages)
+    persisted.key should equal (repo.key)
   }
 
   def stub(i: Int = 0): Repository[Id, Int] = new Repository[Id, Int] {

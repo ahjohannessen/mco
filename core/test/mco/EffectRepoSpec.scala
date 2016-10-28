@@ -9,11 +9,12 @@ class EffectRepoSpec extends UnitSpec {
     repo.state should be (())
   }
 
-  "EffectRepo#apply and packages" should "delegate methods to wrapped repo" in {
+  "EffectRepo#key, apply and packages" should "delegate methods to wrapped repo" in {
     val repo = stub
     val effect = new EffectRepo[(String, ?), Const[String, ?], Int](repo, nat)
     for (s <- 1 to 10) effect(s.toString) should equal (repo(s.toString))
     effect.packages should equal (repo.packages)
+    effect.key should equal (repo.key)
   }
 
   "EffectRepo#change, add and remove" should "execute wrapped operations with side-effects" in {
