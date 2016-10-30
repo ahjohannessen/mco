@@ -11,12 +11,8 @@ private[thumbnail] class JImageViewPane(iv: JImageView) extends JRegion {
 
   imageViewProperty.addListener(new ChangeListener[JImageView]() {
     override def changed(arg0: ObservableValue[_ <: JImageView] , oldIV: JImageView , newIV: JImageView): Unit = {
-      if (oldIV != null) {
-        getChildren.remove(oldIV)
-      }
-      if (newIV != null) {
-        getChildren.add(newIV)
-      }
+      Option(oldIV).foreach(getChildren.remove)
+      Option(newIV).foreach(getChildren.add)
     }
   })
 
@@ -25,8 +21,7 @@ private[thumbnail] class JImageViewPane(iv: JImageView) extends JRegion {
   def this() = this(new JImageView())
 
   protected override def layoutChildren(): Unit = {
-    val imageView = imageViewProperty.get()
-    if (imageView != null) {
+    for (imageView <- Option(imageViewProperty.get())) {
       imageView.setFitWidth(getWidth)
       imageView.setFitHeight(getHeight)
       layoutInArea(imageView, 0, 0, getWidth, getHeight, 0, HPos.CENTER, VPos.CENTER)
