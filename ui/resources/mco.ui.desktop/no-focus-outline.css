@@ -1,5 +1,5 @@
 .root {
-    -fx-focus-color: transparent;
+    -fx-focus-color: -fx-outer-border;
     -fx-faint-focus-color: transparent;
 }
 
