@@ -4,6 +4,7 @@ import cats.data.OptionT
 import cats.instances.stream._
 import cats.instances.vector._
 import cats.syntax.traverse._
+import cats.syntax.functor._
 import mco._
 import mco.io.files._
 
@@ -16,7 +17,7 @@ final class FolderSource private (path: Path, media: Path => IO[Option[(Package,
     renamedOpt <- media(path / to)
     renamed <- renamedOpt map IO.pure getOrElse Fail.InvariantViolation().io
     (_, m) = renamed
-  } yield (new FolderSource(path, media): Source[IO], m)
+  } yield (this: Source[IO], m)
 
   override def add(f: String): IO[Source[IO]] = for {
     exists <- pathExists(Path(f))
@@ -24,13 +25,13 @@ final class FolderSource private (path: Path, media: Path => IO[Option[(Package,
     conflicts <- pathExists(path / Path(f).fileName)
     _ <- Fail.NameConflict(f) when conflicts
     _ <- copyTree(Path(f), path / Path(f).fileName)
-  } yield new FolderSource(path, media)
+  } yield this
 
   override def remove(s: String): IO[Source[IO]] = {
     (s +: ImageExtensions.map(s + "." + _))
       .map(path / _)
       .traverse[IO, Unit](path => pathExists(path).flatMap(if(_) removeFile(path) else IO.pure(())))
-      .map(_ => new FolderSource(path, media))
+      .as(this)
   }
 
   override val list: IO[Stream[(Package, Media[IO])]] = for {
