@@ -21,7 +21,6 @@ import monix.execution.Scheduler.Implicits.global
 object RepoPackagesTable extends UIComponent[UIState, TableView[Package]] {
   override def apply(states: Observable[UIState], act: (UIAction) => Unit): TableView[Package] =
     new TableView[Package] { table =>
-
       onDragOver = (ev: DragEvent) => {
         if (ev.dragboard.hasFiles) {
           ev.acceptTransferModes(TransferMode.Copy)
@@ -78,7 +77,7 @@ object RepoPackagesTable extends UIComponent[UIState, TableView[Package]] {
           }
         },
         new TableColumn[Package, String] {
-          maxWidth <== table.width - 32
+          maxWidth <== table.width - 32 - 20 // 20 for horizontal scrollbar
           text = "Package name"
           editable = true
           cellFactory = _ => new TextFieldTableCell[Package, String](new DefaultStringConverter()) {
