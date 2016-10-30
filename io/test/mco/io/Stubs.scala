@@ -1,5 +1,7 @@
 package mco.io
 
+import java.net.URL
+
 import mco.io.files._
 import cats.syntax.applicative._
 import cats.instances.vector._
@@ -10,6 +12,9 @@ object Stubs {
     private val map = mappings.toMap
 
     class MediaStub(path: Path, cnt: Set[String]) extends Media[IO] {
+
+      override def thumbnail: IO[Option[URL]] = IO.pure(None)
+
       override val key: String = path.fileName
 
       override def readContent: IO[Set[String]] = cnt.pure[IO]

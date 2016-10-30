@@ -24,6 +24,7 @@ class JsonStorage[S: Serializer[?, Json]: Extractor[?, Json]: Empty](target: Pat
       data <- if (isFile) readBytes(target).map(new String(_))
               else IO.pure("")
     } yield Try(Json.parse(data).as[S]) getOrElse Empty[S].empty
+    case NoOp => Empty[S].empty.pure[IO]
   }
 
   def applyToLeft[A]: ((StoreOp[S], A)) => (IO[S], A) = _ leftMap this

@@ -1,5 +1,7 @@
 package mco.persistency
 
+import java.net.URL
+
 import cats.Id
 import mco.io.Fail
 import mco.{Package, Repository, UnitSpec}
@@ -37,6 +39,7 @@ class PersistedRepoSpec extends UnitSpec {
     override def key: String = "test"
     override def state: Int = i
     override def apply(key: String): Package = Package(key, Set())
+    override def thumbnail(key: String): Option[URL] = None
     override def packages: Traversable[Package] = Seq(Package("1", Set()), Package("2", Set()))
     override def change(oldKey: String, updates: Package): Self = stub(i * 11 + 17)
     override def add(f: String): Self = stub(i * 17 + 11)

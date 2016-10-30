@@ -1,5 +1,7 @@
 package mco.io.files
 
+import java.net.URL
+
 import better.files.File
 
 
@@ -10,6 +12,7 @@ case class Path(str: String) {
   def asString: String = str
   def fileName: String = normalized.drop(normalized.lastIndexOf("/") + 1)
   def /(right: String): Path = Path(s"$normalized/$right")
+  def toURL: URL = f.toJava.toURI.toURL
 
   // $COVERAGE-OFF$Equals-hashcode is by contract, even though it's not used in all cases
   override def equals(other: Any): Boolean = other match {

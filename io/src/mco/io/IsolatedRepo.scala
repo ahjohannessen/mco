@@ -1,5 +1,7 @@
 package mco.io
 
+import java.net.URL
+
 import scala.collection.immutable.SortedSet
 
 import cats.instances.stream._
@@ -14,6 +16,8 @@ class IsolatedRepo private (val key: String, source: Source[IO], target: Path, k
   override def state: Set[Package] = packages
 
   override def apply(key: String): Package = known(key)._1
+
+  override def thumbnail(key: String): IO[Option[URL]] = known(key)._2.thumbnail
 
   override lazy val packages: SortedSet[Package] =
     known.values.map {case (pkg, _) => pkg } (collection.breakOut)

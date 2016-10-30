@@ -1,5 +1,7 @@
 package mco.persistency
 
+import java.net.URL
+
 import scala.language.higherKinds
 
 import cats.Functor
@@ -14,6 +16,9 @@ final class PersistedRepo[M[_]: Functor, S](current: Repository[M, S])
   override def state: Unit = ()
 
   override def apply(key: String): Package = current(key)
+  override def thumbnail(key: String): M[(StoreOp[S], Option[URL])] =
+    current.thumbnail(key).fproduct(_ => NoOp).map(_.swap)
+
   override def packages: Traversable[Package] = current.packages
 
   private def recordUpdate(next: Repository[M, S]) = {

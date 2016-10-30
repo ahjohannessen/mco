@@ -1,5 +1,7 @@
 package mco.persistency
 
+import java.net.URL
+
 import cats.syntax.applicative._
 import mco._
 import mco.io.IOInterpreters.FSDsl._
@@ -72,6 +74,8 @@ class JsonStorageSpec extends UnitSpec {
       override def key: String = "test"
 
       override def state: Vector[Int] = currentState
+
+      override def thumbnail(key: String): IO[Option[URL]] = IO.pure(None)
 
       override def apply(key: String): Package = fail("No package")
 

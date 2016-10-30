@@ -26,8 +26,12 @@ final class FolderSource private (path: Path, media: Path => IO[Option[(Package,
     _ <- copyTree(Path(f), path / Path(f).fileName)
   } yield new FolderSource(path, media)
 
-  override def remove(s: String): IO[Source[IO]] =
-    for (_ <- removeFile(path / s)) yield new FolderSource(path, media)
+  override def remove(s: String): IO[Source[IO]] = {
+    (s +: ImageExtensions.map(s + "." + _))
+      .map(path / _)
+      .traverse[IO, Unit](path => pathExists(path).flatMap(if(_) removeFile(path) else IO.pure(())))
+      .map(_ => new FolderSource(path, media))
+  }
 
   override val list: IO[Stream[(Package, Media[IO])]] = for {
     children <- childrenOf(path)
