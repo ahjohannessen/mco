@@ -29,7 +29,6 @@ object ExecIOState extends ExecState[IO, Repository[IO, Unit]] {
 
   override def react(prev: (Repository[IO, Unit], UIState), action: UIAction): IO[(Repository[IO, Unit], UIState)] = {
     val (repo, state) = prev
-    println(s"state: $prev")
     val updatedRepo = action match {
       case SetActivePackage(p) => repo.pure[IO]
       case ClearActivePackage => repo.pure[IO]
@@ -53,7 +52,6 @@ object ExecIOState extends ExecState[IO, Repository[IO, Unit]] {
   }
 
   override def loadInitialState(r: Repository[IO, Unit]): UIState = {
-    println("loading intial state")
     UIState(r.key, r.packages.toVector)
   }
 }
