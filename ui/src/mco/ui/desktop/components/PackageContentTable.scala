@@ -20,7 +20,7 @@ object PackageContentTable extends UIComponent[Set[Content], TableView[Content]]
       columnResizePolicy = TableView.ConstrainedResizePolicy
 
       editable = true
-      vgrow = Priority.Always
+      vgrow = Priority.Sometimes
       items =<< states
       columns ++= Seq(
         new TableColumn[Content, String] {

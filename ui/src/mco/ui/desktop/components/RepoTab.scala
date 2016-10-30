@@ -7,6 +7,7 @@ import scalafx.scene.layout.{HBox, Priority, VBox}
 import mco.Content
 import mco.ui.desktop.UIComponent
 import mco.ui.desktop.ObservableBinding._
+import mco.ui.desktop.components.thumbnail.PackageThumbnail
 import mco.ui.state.{UIAction, UIState}
 import monix.reactive.Observable
 
@@ -22,9 +23,7 @@ object RepoTab extends UIComponent[UIState, Tab] {
           padding = Insets(0, 0, 0, 10)
           prefWidth <== (contentRoot.width / 3)
           children = Seq(
-            new Label("Images not yet supported") {
-              vgrow = Priority.Always
-            },
+            PackageThumbnail(states.map(_.thumbnailURL).withLatestFrom(width.observe())(Tuple2.apply), act),
             PackageContentTable(states.map(_.currentPackage).map(_.map(_.contents).getOrElse(Set.empty[Content])), act),
             PackageActionButtons(states.map(_.currentPackage), act)
           )

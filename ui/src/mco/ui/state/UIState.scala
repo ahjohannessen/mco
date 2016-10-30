@@ -1,16 +1,19 @@
 package mco.ui.state
 
+import java.net.URL
+
 import mco.Package
 import cats.syntax.option._
 
 case class UIState(
   repoName: String,
   packages: Vector[Package],
-  currentPackage: Option[Package] = None
+  currentPackage: Option[Package] = None,
+  thumbnailURL: Option[URL] = None
 ) {
   def changeBy(action: UIAction): Option[UIState] = action match {
     case SetActivePackage(p) => copy(currentPackage = Some(p)).some
-    case ClearActivePackage => copy(currentPackage = None).some
+    case ClearActivePackage => copy(currentPackage = None, thumbnailURL = None).some
     case InstallPackage(p) => copyFn(p.key, _.copy(isInstalled = true)).some
     case UninstallPackage(p) => copyFn(p.key, _.copy(isInstalled = false)).some
     case RenamePackage(from, to) => copyFn(from, _.copy(key = to)).some

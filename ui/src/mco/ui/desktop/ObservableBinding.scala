@@ -5,6 +5,7 @@ import javafx.collections.ObservableList
 
 import scalafx.application.Platform.runLater
 import scalafx.beans.property.Property
+import scalafx.beans.value.ObservableValue
 import scalafx.collections.{fillCollection, fillSFXCollection}
 import scalafx.delegate.SFXDelegate
 
@@ -18,12 +19,16 @@ object ObservableBinding {
     def =<<[B](obs: Observable[_ <: Iterable[B]])(implicit ev: T <:< ObservableList[B]): Unit = {
       obs.foreach(list => runLater(fillCollection(self.value, list))); ()
     }
+  }
+
+  implicit class ObservableValueOps[T, J](val self: ObservableValue[T, J]) {
     def observe(): Observable[T] = {
       val subj = BehaviorSubject(self.value)
       self.onChange {
         subj.onNext(self.value)
         ()
       }
+      subj.onNext(self.value)
       subj
     }
   }
