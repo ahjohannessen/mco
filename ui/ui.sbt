@@ -4,3 +4,4 @@ libraryDependencies ++= Seq(
 )
 
 fork := true // Avoid problems with JavaFX double initalization
+coverageExcludedPackages := "mco.ui.*" // currently not applying unit tests to UI
