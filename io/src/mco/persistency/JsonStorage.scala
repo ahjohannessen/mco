@@ -53,17 +53,10 @@ object JsonStorage {
 
   object Converters {
     import ContentKind._
-    implicit val contentKindExtractor: Extractor[ContentKind, Json] = Json.extractor[Int].map {
-      case 0 => Mod
-      case 1 => Doc
-      case _ => Garbage
-    }
+    implicit val contentKindExtractor: Extractor[ContentKind, Json] =
+      Json.extractor[String] map {ContentKind.fromString} map {_ getOrElse Garbage}
 
     implicit val contentKindSerializer: Serializer[ContentKind, Json] =
-      Json.serializer[Int].contramap[ContentKind]{
-        case Mod => 0
-        case Doc => 1
-        case Garbage => -1
-      }
+      Json.serializer[String].contramap[ContentKind]{ContentKind.asString}
   }
 }
