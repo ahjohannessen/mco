@@ -6,7 +6,7 @@ import java.io.{PrintWriter, StringWriter}
 import scala.language.higherKinds
 import scala.util.{Failure, Success, Try}
 import scalafx.Includes._
-import scalafx.application.JFXApp
+import scalafx.application.{JFXApp, Platform}
 import scalafx.scene.Scene
 import scalafx.scene.control._
 
@@ -45,7 +45,17 @@ trait MainView {
           root = new TabPane { tabs = objects map RepoTab.tupled }
         }
       }
-    }.get
+    } match {
+      case Success(stage) => stage
+      case Failure(ex) => new JFXApp.PrimaryStage { stg =>
+        width = 800
+        height = 600
+        onShown = handle {
+          showExceptionDialog(ex)
+          Platform.exit()
+        }
+      }
+    }
   }
 
   private def handlerForSubject[A](ps: PublishSubject[A]) = (a: A) => { ps.onNext(a); () }
