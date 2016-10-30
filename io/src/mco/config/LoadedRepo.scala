@@ -29,14 +29,15 @@ object LoadedRepo {
   private def repo[F[_]: Functor](c: RepoConfig, nat: IO ~> F)(src: Source[IO]): F[Repository[F, Unit]] =
     (c.kind, c.persistency) match {
       case (RepoKind.Isolated, Persistency.JSON) =>
-        nat(JsonStorage.preload(IsolatedRepo, Path(c.key + ".json"), c.target, src))
+        nat(JsonStorage.preload(c.key, IsolatedRepo, Path(c.key + ".json"), c.target, src))
           .map(new EffectRepo(_, nat))
 
       case (RepoKind.Isolated, Persistency.None) =>
-        nat(IsolatedRepo(src, c.target, Set()))
+        nat(IsolatedRepo(c.key, src, c.target, Set()))
           .map(new EffectRepo(_, nat))
     }
 
+  // TODO - nat here might not at all be necessary
   def apply[F[_]: Monad](c: RepoConfig, nat: IO ~> F): F[Repository[F, Unit]] =
     nat(source(c)) flatMap repo(c, nat)
 }

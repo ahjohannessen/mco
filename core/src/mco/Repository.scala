@@ -4,6 +4,8 @@ import scala.language.higherKinds
 
 trait Repository[M[_], S] {
   final type Self = Repository[M, S]
+
+  def key: String
   def state: S
 
   def apply(key: String): Package
@@ -22,6 +24,6 @@ trait Repository[M[_], S] {
 
 object Repository {
   trait Companion[M[_], S] {
-    def apply(source: Source[M], target: String, state: S): M[Repository[M, S]]
+    def apply(key: String, source: Source[M], target: String, state: S): M[Repository[M, S]]
   }
 }

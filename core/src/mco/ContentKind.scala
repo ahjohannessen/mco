@@ -11,4 +11,16 @@ object ContentKind {
   case object Mod     extends ContentKind
   case object Doc     extends ContentKind
   case object Garbage extends ContentKind
+
+  def asString(kind: ContentKind): String = kind match {
+    case Mod => "Mod"
+    case Doc => "Doc"
+    case Garbage => "Garbage"
+  }
+  def fromString(kind: String): Option[ContentKind] = kind match {
+    case "Mod" => Some(Mod)
+    case "Doc" => Some(Doc)
+    case "Garbage" => Some(Garbage)
+    case _ => None
+  }
 }

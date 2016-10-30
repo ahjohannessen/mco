@@ -50,7 +50,7 @@ class JsonStorageSpec extends UnitSpec {
   }
 
   "JsonStorage.preload" should "create repository with persistency side-effects" in {
-    val repo = JsonStorage.preload(fakeCompanion, Path("state.json"), "target", Stubs.emptySource)
+    val repo = JsonStorage.preload("test", fakeCompanion, Path("state.json"), "target", Stubs.emptySource)
     val io = repo
       .flatMap(_.change("foo", Package("foo", Set())))
       .flatMap(_.add("bar"))
@@ -61,7 +61,7 @@ class JsonStorageSpec extends UnitSpec {
   }
 
   private def fakeCompanion = new Repository.Companion[IO, Vector[Int]] {
-    override def apply(s: Source[IO], t: String, state: Vector[Int]): IO[Repository[IO, Vector[Int]]] = {
+    override def apply(key: String, s: Source[IO], t: String, state: Vector[Int]): IO[Repository[IO, Vector[Int]]] = {
       fakeRepo(state).pure[IO]
     }
   }
@@ -69,6 +69,8 @@ class JsonStorageSpec extends UnitSpec {
   private def fakeRepo(currentState: Vector[Int]): Repository[IO, Vector[Int]] =
     new Repository[IO, Vector[Int]]
     {
+      override def key: String = "test"
+
       override def state: Vector[Int] = currentState
 
       override def apply(key: String): Package = fail("No package")

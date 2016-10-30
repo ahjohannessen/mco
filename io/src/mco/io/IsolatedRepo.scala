@@ -9,7 +9,7 @@ import mco._
 import mco.io.files._
 
 
-class IsolatedRepo private (source: Source[IO], target: Path, known: Map[String, (Package, Media[IO])]) extends Repository[IO, Set[Package]] {
+class IsolatedRepo private (val key: String, source: Source[IO], target: Path, known: Map[String, (Package, Media[IO])]) extends Repository[IO, Set[Package]] {
 
   override def state: Set[Package] = packages
 
@@ -40,7 +40,7 @@ class IsolatedRepo private (source: Source[IO], target: Path, known: Map[String,
     (newSource, media) = result
     (pkg, _) = known(oldKey)
     newKnown = known - oldKey + { (newKey, (pkg.copy(key = newKey), media)) }
-  } yield new IsolatedRepo(newSource, target, newKnown)
+  } yield new IsolatedRepo(key, newSource, target, newKnown)
 
   private def reselect(upd: Package) = {
     val nextContents = upd.contents
@@ -49,7 +49,7 @@ class IsolatedRepo private (source: Source[IO], target: Path, known: Map[String,
     def updated(r: IsolatedRepo) = {
       val (pkg, media) = known(upd.key)
       val newKnown = known.updated(upd.key, (pkg.copy(contents = nextContents), media))
-      new IsolatedRepo(source, target, newKnown).pure[IO]
+      new IsolatedRepo(key, source, target, newKnown).pure[IO]
     }
 
     if (apply(upd.key).isInstalled) for {
@@ -88,37 +88,38 @@ class IsolatedRepo private (source: Source[IO], target: Path, known: Map[String,
 
   private def withUpdated(pkg: Package, media: Media[IO]) ={
     val nextKnown = known.updated(pkg.key, (pkg, media))
-    new IsolatedRepo(source, target, nextKnown)
+    new IsolatedRepo(key, source, target, nextKnown)
   }
 
   override def add(f: String): IO[Self] = {
     for {
       nextSource <- source add f
       nextElements <- nextSource.list
-      Some(t) = nextElements find { case (pkg, _) => pkg.key == f }
-    } yield new IsolatedRepo(nextSource, target, known + (f -> t)).widen
+      fileName = Path(f).fileName
+      Some(t) = nextElements find { case (pkg, _) => pkg.key == fileName }
+    } yield new IsolatedRepo(key, nextSource, target, known + (fileName -> t)).widen
   }
 
   override def remove(s: String): IO[Self] = {
     val pkg = apply(s)
     if (pkg.isInstalled) change(s, pkg.copy(isInstalled = false)) flatMap {_.remove(s)}
     else (source remove s)
-      .map(nextSource => new IsolatedRepo(nextSource, target, known - s).widen)
+      .map(nextSource => new IsolatedRepo(key, nextSource, target, known - s).widen)
   }
 }
 
 object IsolatedRepo extends Repository.Companion[IO, Set[Package]] {
-  override def apply(source: Source[IO], target: String, state: Set[Package]): IO[Repository[IO, Set[Package]]] =
+  override def apply(key: String, source: Source[IO], target: String, state: Set[Package]): IO[Repository[IO, Set[Package]]] =
     for {
       existing <- source.list
       updated <- IO.traverse(existing)({statusFromExisting(Path(target)) _}.tupled)
       known = state.map(p => p.key -> p).toMap
       repos = updated.map {
-        case (key, (pkg, media)) if known contains key =>
-          (key, (known(key).copy(isInstalled = pkg.isInstalled), media))
+        case (pkey, (pkg, media)) if known contains pkey =>
+          (pkey, (known(pkey).copy(isInstalled = pkg.isInstalled), media))
         case tuple: Any => tuple
       }
-    } yield new IsolatedRepo(source, Path(target), repos.toMap): Repository[IO, Set[Package]]
+    } yield new IsolatedRepo(key, source, Path(target), repos.toMap): Repository[IO, Set[Package]]
 
   private def statusFromExisting(target: Path)(pkg: Package, media: Media[IO]) = for {
     exists <- isDirectory(target / pkg.key)

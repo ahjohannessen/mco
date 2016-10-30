@@ -32,6 +32,7 @@ class JsonStorage[S: Serializer[?, Json]: Extractor[?, Json]: Empty](target: Pat
 object JsonStorage {
   def preload[S: Serializer[?, Json]: Extractor[?, Json]: Empty]
   (
+    key: String,
     repo: Repository.Companion[IO, S],
     json: Path,
     target: String,
@@ -40,7 +41,7 @@ object JsonStorage {
     for {
       storage <- new JsonStorage[S](json).pure[IO]
       state <- storage(Read)
-      loaded <- repo(source, target, state)
+      loaded <- repo(key, source, target, state)
       pr = new PersistedRepo(loaded).widen
     } yield new EffectRepo[PersistedRepo.Lift[IO, S]#T, IO, Unit](pr, outputState(storage)).widen
   }

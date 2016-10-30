@@ -22,7 +22,8 @@ class IsolatedRepoSpec extends UnitSpec {
         "content1" -> obj()
       )
     ),
-    "renamed" -> obj()
+    "renamed" -> obj(),
+    "deeply" -> dir("nested" -> dir("object" -> obj()))
   )
 
   private val io = StubIORunner(stub)
@@ -30,7 +31,7 @@ class IsolatedRepoSpec extends UnitSpec {
   "IsolatedRepo companion" should "create a repository given a folder" in {
     val repoOpt = for {
       src <- FolderSource("source", Classifiers.enableAll)
-      repo <- IsolatedRepo(src, "target", Set())
+      repo <- IsolatedRepo("test", src, "target", Set())
     } yield repo
 
     noException shouldBe thrownBy {
@@ -43,10 +44,11 @@ class IsolatedRepoSpec extends UnitSpec {
       "source", Classifiers.enableAll, media(
         "source/package1" -> Set("content1"),
         "source/package2" -> Set("readme.txt", "toInstall.txt"),
-        "source/renamed" -> Set("content1")
+        "source/renamed" -> Set("content1"),
+        "source/object" -> Set()
       )
     )
-    repo <- IsolatedRepo(src, "target", Set(Package(
+    repo <- IsolatedRepo("test", src, "target", Set(Package(
       "package2",
       Set(Content("readme.txt", ContentKind.Doc), Content("toInstall.txt", ContentKind.Mod))
     )))
@@ -76,10 +78,10 @@ class IsolatedRepoSpec extends UnitSpec {
   }
 
   "IsolatedRepo#add" should "push object to file system and create a package from it" in {
-    val addIO = repo add "renamed"
+    val addIO = repo add "deeply/nested/object"
     val (state, nextRepo) = io(addIO)
-    nextRepo.packages.map(_.key) should contain theSameElementsAs Seq("package1", "package2", "renamed")
-    deepGet(Path("source/renamed"))(state) should not be empty
+    nextRepo.packages.map(_.key) should contain theSameElementsAs Seq("package1", "package2", "object")
+    deepGet(Path("source/object"))(state) should not be empty
   }
 
   "IsolatedRepo#remove" should "remove object from fs and its package" in {
