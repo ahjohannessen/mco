@@ -4,7 +4,7 @@
 }
 
 .table-row-cell:filled:selected {
-    -fx-background-color: derive(#44B, +80%) !important;
+    -fx-background-color: derive(#44B, +80%);
 }
 
 .button:default {
@@ -13,5 +13,5 @@
 }
 
 .table-row-cell:filled .box {
-    -fx-background-color: derive(#44B, +70%) !important;
+    -fx-background-color: derive(#44B, +70%);
 }
