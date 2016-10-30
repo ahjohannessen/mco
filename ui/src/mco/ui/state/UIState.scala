@@ -21,7 +21,7 @@ case class UIState(
       currentPackage.fold(this)(p =>
         copyFn(p.key, _ => p.copy(contents = p.contents.map {
           case c if c.key == contentKey => c.copy(kind = kind)
-          case c => c
+          case c: Any => c
         }))
       ).some
     case AddObjects(_) => none

@@ -58,7 +58,7 @@ object ExecIOState extends ExecState[IO, Repository[IO, Unit]] {
           .fold(repo.pure[IO])(pkg => repo.change(pkg.key, existing =>
             existing.copy(contents = existing.contents.map {
               case c if c.key == contentKey => c.copy(kind = kind)
-              case c => c
+              case c: Any => c
             }))) |> withNewState
       case AddObjects(paths) =>
         paths.foldM[IO, Repository[IO, Unit]](repo)(_ add _) |> withNewState
