@@ -22,7 +22,7 @@ object Classifier {
 
   def apply[M[_]: Functor](fn: String => ContentKind): Classifier[M] = new Classifier[M] {
     override def apply(v1: Media[M]): M[Package] = for {
-      keys <- v1.readContent
+      keys <- v1.contentKeys
     } yield Package(v1.key, keys map { key => Content(key, fn(key)) })
   }
 }

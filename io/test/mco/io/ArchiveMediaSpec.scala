@@ -29,9 +29,9 @@ class ArchiveMediaSpec extends UnitSpec {
     StubIORunner(state).value(ArchiveMedia("/nope/does/not/exist.7z")) shouldBe empty
   }
 
-  "ArchiveMedia#readContent" should "list archived files" in {
+  "ArchiveMedia#contentKeys" should "list archived files" in {
     val (state, media) = pureTestMedia
-    StubIORunner(state).value(media.readContent) should contain theSameElementsAs someNames
+    StubIORunner(state).value(media.contentKeys) should contain theSameElementsAs someNames
   }
 
   "ArchiveMedia#readData" should "load archived file contents" in {

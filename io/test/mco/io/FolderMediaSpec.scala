@@ -40,9 +40,9 @@ class FolderMediaSpec extends UnitSpec {
     (state, media)
   }
 
-  "FolderMedia#readContent" should "list contained files with their hashes" in {
+  "FolderMedia#contentKeys" should "list contained files with their hashes" in {
     val (state, media) = pureTestMedia
-    val contents = StubIORunner(state).value(media.readContent)
+    val contents = StubIORunner(state).value(media.contentKeys)
     contents should contain theSameElementsAs Set("file1", "file2", "file3")
   }
 

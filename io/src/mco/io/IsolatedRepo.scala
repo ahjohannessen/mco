@@ -127,7 +127,7 @@ object IsolatedRepo extends Repository.Companion[IO, Set[Package]] {
 
   private def statusFromExisting(target: Path)(pkg: Package, media: Media[IO]) = for {
     exists <- isDirectory(target / pkg.key)
-    fileExists <- if (exists) media.readContent else ((_: String) => false).pure[IO]
+    fileExists <- if (exists) media.contentKeys else ((_: String) => false).pure[IO]
     updatedContent = pkg.contents.map(c => c.copy(isInstalled = fileExists(c.key)))
   } yield pkg.key -> (pkg.copy(contents = updatedContent, isInstalled = exists) -> media)
 }

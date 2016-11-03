@@ -11,7 +11,7 @@ import mco.Media
 final class FolderMedia private (val path: Path) extends Media[IO] with NeighborFileThumbnail {
   override val key: String = path.fileName
 
-  override def readContent: IO[Set[String]] =
+  override def contentKeys: IO[Set[String]] =
     for (descendants <- descendantsOf(path)) yield {
       descendants map {_ relativeToS path} toSet
     }

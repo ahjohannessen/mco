@@ -17,7 +17,7 @@ object Stubs {
 
       override val key: String = path.fileName
 
-      override def readContent: IO[Set[String]] = cnt.pure[IO]
+      override def contentKeys: IO[Set[String]] = cnt.pure[IO]
 
       override def copy(content: Map[String, String]): IO[Unit] =
         IO.traverse(content.toVector){
