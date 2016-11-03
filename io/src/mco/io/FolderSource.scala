@@ -1,57 +1,76 @@
 package mco.io
 
-import cats.data.OptionT
+import cats.instances.option._
 import cats.instances.stream._
 import cats.instances.vector._
-import cats.syntax.traverse._
-import cats.syntax.functor._
+import cats.syntax.all._
 import mco._
+import mco.Media.{Companion => MediaC}
 import mco.io.files._
 
-final class FolderSource private (path: Path, media: Path => IO[Option[(Package, Media[IO])]]) extends Source[IO] {
+final class FolderSource private (backingFolder: Path,
+                                  getMedia: Path => IO[Option[Media[IO]]],
+                                  classifier: Classifier[IO])
+  extends Source[IO]
+{
 
-  override def rename(from: String, to: String): IO[(Source[IO], Media[IO])] = for {
-    conflict <- pathExists(path / to)
-    _ <- Fail.NameConflict(to) when conflict
-    _ <- moveTree(path / from, path / to)
-    renamedOpt <- media(path / to)
-    renamed <- renamedOpt map IO.pure getOrElse Fail.InvariantViolation().io
-    (_, m) = renamed
-  } yield (this: Source[IO], m)
+  override val list: IO[Stream[(Package, Media[IO])]] =
+    for {
+      children <- childrenOf(backingFolder)
+      medias   <- children traverseFilter getMedia
+      packages <- medias traverse classifier
+    } yield packages zip medias
 
-  override def add(f: String): IO[Source[IO]] = for {
-    exists <- pathExists(Path(f))
-    _ <- Fail.MissingResource(f) when !exists
-    conflicts <- pathExists(path / Path(f).fileName)
-    _ <- Fail.NameConflict(f) when conflicts
-    _ <- copyTree(Path(f), path / Path(f).fileName)
-  } yield this
+  override def rename(from: String, to: String): IO[Media[IO]] = for {
+    conflict   <- pathExists(backingFolder / to)
+    _          <- Fail.NameConflict(to) when conflict
+    _          <- moveTree(backingFolder / from, backingFolder / to)
+    maybeMedia <- getMedia(backingFolder / to)
+    media      <- maybeMedia map IO.pure getOrElse Fail.InvariantViolation().io
+  } yield media
 
-  override def remove(s: String): IO[Source[IO]] = {
-    (s +: ImageExtensions.map(s + "." + _))
-      .map(path / _)
-      .traverse[IO, Unit](path => pathExists(path).flatMap(if(_) removeFile(path) else IO.pure(())))
-      .as(this)
+  override def add(key: String): IO[(Package, Media[IO])] = {
+    val fromPath = Path(key)
+    val toPath = backingFolder / fromPath.fileName
+
+    for {
+      exists     <- pathExists(fromPath)
+      _          <- Fail.MissingResource(key) when !exists
+      conflicts  <- pathExists(toPath)
+      _          <- Fail.NameConflict(key) when conflicts
+      _          <- copyTree(fromPath, toPath)
+      maybeMedia <- getMedia(toPath)
+
+      media      <- maybeMedia
+        .map(IO.pure)
+        .getOrElse(removeFile(toPath) followedBy
+          Fail.UnexpectedType(key, "supported media").io)
+
+      pkg        <- classifier(media)
+    } yield (pkg, media)
   }
 
-  override val list: IO[Stream[(Package, Media[IO])]] = for {
-    children <- childrenOf(path)
-    rr <- children traverse media
-  } yield rr.flatten
+  override def remove(key: String): IO[Unit] = {
+    def removeIf(path: Path)(cond: Boolean) =
+      if(cond) removeFile(path) else IO.pure(())
+
+    (key +: ImageExtensions.map(key + "." + _))
+      .map(backingFolder / _)
+      .traverse_[IO, Unit](path => pathExists(path) flatMap removeIf(path))
+  }
 }
 
 object FolderSource {
-  def apply(f: String, classifier: Classifier[IO], medias: Media.Companion[IO]*): IO[Source[IO]] = for {
-    isDir <- isDirectory(Path(f))
-    _ <- Fail.UnexpectedType(f, "folder") when !isDir
-  } yield new FolderSource(Path(f), p => mediaGenerator(medias.toVector, classifier, p.asString))
+  def apply(dir: String, classifier: Classifier[IO], medias: MediaC[IO]*): IO[Source[IO]] =
+    for {
+      isDir <- isDirectory(Path(dir))
+      _     <- Fail.UnexpectedType(dir, "folder") when !isDir
+    } yield new FolderSource(Path(dir), mediasBy(medias.toStream), classifier)
 
 
-  private def mediaGenerator(factories: Vector[Media.Companion[IO]],
-                             classifier: Classifier[IO],
-                             path: String) =
-      (for {
-        media <- OptionT[IO, Media[IO]](IO.traverse(factories)(_(path)).map(_.flatten.headOption))
-        pkg <- OptionT.liftF[IO, Package](classifier(media))
-      } yield (pkg, media)).value
+  private def mediasBy(factories: Stream[MediaC[IO]])(p: Path) = {
+    factories
+      .traverse(_.apply(p.asString))
+      .map(_.foldK)
+  }
 }

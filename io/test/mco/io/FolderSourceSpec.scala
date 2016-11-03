@@ -50,7 +50,10 @@ class FolderSourceSpec extends UnitSpec {
   }
 
   "FolderSource#add" should "pull file or folder from filesystem & source, handling subdirs" in {
-    val src = run.value(FolderSource("storage", classifier, media()))
+    val src = run.value(FolderSource("storage", classifier, media(
+      "another folder/named" -> randoms,
+      "storage/named" -> randoms
+    )))
     val state = run.state(src add "another folder/named")
     val added = deepGet(Path("storage/named"))(state)
     added shouldEqual obj().some
@@ -75,13 +78,13 @@ class FolderSourceSpec extends UnitSpec {
 
   "FolderSource#remove" should "remove file or folder from filesystem & source" in {
     val src = run.value(FolderSource("storage", classifier, media("storage/folder" -> emptys, "storage/archive.zip" -> emptys)))
-    val (state, value) = run(src remove "folder")
+    val state = run.state(src remove "folder")
     deepGet(Path("storage/folder"))(state) shouldBe empty
-    StubIORunner(state).value(value.list).loneElement._1.key shouldBe "archive.zip"
+    StubIORunner(state).value(src.list).loneElement._1.key shouldBe "archive.zip"
 
-    val (state2, value2) = StubIORunner(state)(value remove "archive.zip")
+    val state2 = StubIORunner(state).state(src remove "archive.zip")
     deepGet(Path("storage/archive.zip"))(state2) shouldBe empty
-    StubIORunner(state2).value(value2.list) shouldBe empty
+    StubIORunner(state2).value(src.list) shouldBe empty
   }
 
   "FolderSource#rename" should "rename file or folder on disk" in {

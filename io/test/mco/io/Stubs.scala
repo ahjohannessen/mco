@@ -32,13 +32,13 @@ object Stubs {
   def emptySource: Source[IO] = new Source[IO] {
     override def list: IO[Stream[(Package, Media[IO])]] = IO.pure(Stream())
 
-    override def add(f: String): IO[Source[IO]] =
+    override def add(f: String): IO[(Package, Media[IO])] =
       sys.error("Operation not supported")
 
-    override def remove(s: String): IO[Source[IO]] =
+    override def remove(s: String): IO[Unit] =
       sys.error("Operation not supported")
 
-    override def rename(from: String, to: String): IO[(Source[IO], Media[IO])] =
+    override def rename(from: String, to: String): IO[Media[IO]] =
       sys.error("Operation not supported")
   }
 

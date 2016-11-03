@@ -40,11 +40,10 @@ class IsolatedRepo private (val key: String, source: Source[IO], target: Path, k
 
   private def rename(oldKey: String, newKey: String): IO[IsolatedRepo] = for {
     _ <- moveTree(target / oldKey, target / newKey)
-    result <- source.rename(oldKey, newKey)
-    (newSource, media) = result
+    media <- source.rename(oldKey, newKey)
     (pkg, _) = known(oldKey)
     newKnown = known - oldKey + { (newKey, (pkg.copy(key = newKey), media)) }
-  } yield new IsolatedRepo(key, newSource, target, newKnown)
+  } yield new IsolatedRepo(key, source, target, newKnown)
 
   private def reselect(upd: Package) = {
     val nextContents = upd.contents
@@ -97,18 +96,15 @@ class IsolatedRepo private (val key: String, source: Source[IO], target: Path, k
 
   override def add(f: String): IO[Self] = {
     for {
-      nextSource <- source add f
-      nextElements <- nextSource.list
+      data <- source add f
       fileName = Path(f).fileName
-      Some(t) = nextElements find { case (pkg, _) => pkg.key == fileName }
-    } yield new IsolatedRepo(key, nextSource, target, known + (fileName -> t)).widen
+    } yield new IsolatedRepo(key, source, target, known.updated(fileName, data)).widen
   }
 
   override def remove(s: String): IO[Self] = {
     val pkg = apply(s)
     if (pkg.isInstalled) change(s, pkg.copy(isInstalled = false)) flatMap {_.remove(s)}
-    else (source remove s)
-      .map(nextSource => new IsolatedRepo(key, nextSource, target, known - s).widen)
+    else source remove s as new IsolatedRepo(key, source, target, known - s)
   }
 }
 
