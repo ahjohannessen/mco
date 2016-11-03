@@ -11,6 +11,12 @@ case class Path(str: String) {
   def relativeToS(other: Path): String = other.f.relativize(f).toString.replace('\\', '/')
   def asString: String = str
   def fileName: String = normalized.drop(normalized.lastIndexOf("/") + 1)
+  def extension: Option[String] = {
+    val dotIndex = fileName indexOf '.'
+    if (dotIndex != -1) Some(fileName.drop(dotIndex + 1))
+    else None
+  }
+
   def /(right: String): Path = Path(s"$normalized/$right")
   def toURL: URL = f.toJava.toURI.toURL
 

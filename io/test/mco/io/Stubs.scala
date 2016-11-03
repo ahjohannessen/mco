@@ -15,6 +15,10 @@ object Stubs {
 
       override def thumbnail: IO[Option[URL]] = IO.pure(None)
 
+      override def setThumbnail(location: String): IO[Unit] = ().pure[IO]
+
+      override def discardThumbnail: IO[Unit] = ().pure[IO]
+
       override val key: String = path.fileName
 
       override def contentKeys: IO[Set[String]] = cnt.pure[IO]

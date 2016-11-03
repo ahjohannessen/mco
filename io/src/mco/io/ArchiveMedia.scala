@@ -7,7 +7,8 @@ import cats.syntax.option._
 final class ArchiveMedia private (val path: Path) extends Media[IO] with NeighborFileThumbnail {
   override val key: String = path.fileName
   override def contentKeys: IO[Set[String]] = archiveEntries(path)
-  override def copy(map: Map[String, String]): IO[Unit] = extract(path, map.mapValues(Path(_)))
+  override def copy(locations: Map[String, String]): IO[Unit] =
+    extract(path, locations mapValues Path)
 }
 
 object ArchiveMedia extends Media.Companion[IO] {

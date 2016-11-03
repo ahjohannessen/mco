@@ -7,6 +7,7 @@ import scala.util.control.NonFatal
 import cats.{Monad, MonadError, RecursiveTailRecM}
 import cats.data.{Xor, XorT}
 import cats.syntax.functor._
+import cats.syntax.applicative._
 import cats.syntax.cartesian._
 
 package object files {
@@ -51,5 +52,8 @@ package object files {
 
   def pathExists(path: Path) : IO[Boolean] =
     ops.isDirectory(path) |@| ops.isRegularFile(path) map (_ || _)
+
+  def removeIfExists(path: Path): IO[Unit] = pathExists(path) flatMap
+    { if (_) removeFile(path) else ().pure[IO] }
 
 }

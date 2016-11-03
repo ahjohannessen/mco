@@ -22,4 +22,25 @@ trait NeighborFileThumbnail { this: Media[IO] =>
       .traverse(loadIfExists)
       .map(_.foldK)
   }
+
+  final override def setThumbnail(location: String): IO[Unit] = {
+    val fromPath = Path(location)
+
+    for {
+      isFile <- isRegularFile(fromPath)
+      _ <- Fail.UnexpectedType(location, "existing file") when !isFile
+      ext <- fromPath.extension
+        .filter(ImageExtensions.contains)
+        .map(IO.pure)
+        .getOrElse(Fail.UnexpectedType(location, s"${ImageExtensions.mkString} image").io)
+      _ <- discardThumbnail
+      toPath = Path(s"${path.asString}.$ext")
+      _ <- copyTree(fromPath, toPath)
+    } yield ()
+  }
+
+  final override def discardThumbnail: IO[Unit] =
+    ImageExtensions
+      .map(ext => Path(s"${path.asString}.$ext"))
+      .traverse_(removeIfExists)
 }
