@@ -1,5 +1,7 @@
 package mco
 
+import java.net.URL
+
 import cats._
 import cats.data.Const
 
@@ -17,13 +19,13 @@ class EffectRepoSpec extends UnitSpec {
     effect.key should equal (repo.key)
   }
 
-  "EffectRepo#change, add and remove" should "execute wrapped operations with side-effects" in {
+  "EffectRepo#change, add, remove and thumbnail" should "have their effect transformed" in {
     val repo = new EffectRepo[(String, ?), Const[String, ?], Int](stub, nat)
+
     repo change ("foo", x => x) shouldBe Const("change")
-
     repo add "bar" shouldBe Const("add")
-
     repo remove "eggs" shouldBe Const("remove")
+    repo.thumbnail("spam").url shouldBe Const("url")
   }
 
   private def stub: Repository[(String, ?), Int] = new Repository[(String, ?), Int] {
@@ -32,7 +34,12 @@ class EffectRepoSpec extends UnitSpec {
     override def state: Int = 42
     override def apply(key: String): Package = Package(key, Set())
 
-    override def thumbnail(key: String): Thumbnail[(String, ?)] = sys.error("stub")
+    override def thumbnail(key: String): Thumbnail[(String, ?)] = new Thumbnail[(String, ?)] {
+      override def discardThumbnail: (String, Unit) = ("discardThumbnail", ())
+      override def reassociate(to: String): (String, Unit) = ("reassociate", ())
+      override def url: (String, Option[URL]) = ("url", None)
+      override def setThumbnail(location: String): (String, Unit) = ("setThumbnail", ())
+    }
 
     override def packages: Traversable[Package] = Seq(Package("1", Set()), Package("2", Set()))
 

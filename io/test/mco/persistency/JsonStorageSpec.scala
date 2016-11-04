@@ -30,7 +30,7 @@ class JsonStorageSpec extends UnitSpec {
 
   "JsonStorage#applyToLeft" should "use JsonStorage#apply on left element" in {
     val runner = StubIORunner(initialState)
-    for (op <- Seq(Read, Update(Vector(), Vector(1, 2, 5)))) {
+    for (op <- Seq(Read, NoOp, Update(Vector(), Vector(1, 2, 5)))) {
       val obj = new Object
       val applyResult = storage(op)
       val (applyResult2, objResult)= storage.applyToLeft((op, obj))
@@ -47,6 +47,11 @@ class JsonStorageSpec extends UnitSpec {
       kind <- Seq(ContentKind.Garbage, ContentKind.Mod, ContentKind.Doc)
       pkg = Package("pkg", Set(Content("cnt", kind, isInstalled = false)), isInstalled = false)
     } Json(pkg).as[Package] should equal (pkg)
+  }
+
+  it should "map invalid ContentKind to Garbage" in {
+    import JsonStorage.Converters._
+    Json.parse("\"FUBAR\"").as[ContentKind] should equal (ContentKind.Garbage)
   }
 
   "JsonStorage.preload" should "create repository with persistency side-effects" in {

@@ -34,7 +34,7 @@ object IOInterpreters {
         .split(Array('\\', '/'))
         .foldLeft((o: FileSystemObject).some) { (x, y) =>
           x match {
-            case Some(Dir(m)) => m.get(y)
+            case d @ Some(Dir(m)) => if (y.isEmpty) d else m.get(y)
             case _ => none
           }
       }
@@ -50,7 +50,7 @@ object IOInterpreters {
         }
       }
 
-      deepSetR(p.asString.split(Array('\\', '/')).toList, root) match {
+      deepSetR(p.asString.split(Array('\\', '/')).toList.filter(_.nonEmpty), root) match {
         case d: Dir => d
         case _ => err(p)
       }

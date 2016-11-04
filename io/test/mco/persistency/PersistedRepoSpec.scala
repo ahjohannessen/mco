@@ -1,5 +1,7 @@
 package mco.persistency
 
+import java.net.URL
+
 import cats.Id
 import mco.io.Fail
 import mco.{Package, Repository, Thumbnail, UnitSpec}
@@ -13,6 +15,9 @@ class PersistedRepoSpec extends UnitSpec {
     val (storeOp2, _) = new PersistedRepo(stub()).add("key")
     val nextState2 = stub().add("key").state
     storeOp2 should equal (Update(stub().state, nextState2))
+
+    val (thumbnailOp, _) = new PersistedRepo(stub()).thumbnail("foo").url
+    thumbnailOp shouldBe NoOp
   }
 
   it should "propagate failures without any further operation" in {
@@ -37,7 +42,12 @@ class PersistedRepoSpec extends UnitSpec {
     override def key: String = "test"
     override def state: Int = i
     override def apply(key: String): Package = Package(key, Set())
-    override def thumbnail(key: String): Thumbnail[Id] = fail("Not implemented")
+    override def thumbnail(key: String): Thumbnail[Id] = new Thumbnail[Id] {
+      override def discardThumbnail: Unit = ()
+      override def reassociate(to: String): Unit = ()
+      override def url: Option[URL] = None
+      override def setThumbnail(location: String): Unit = ()
+    }
     override def packages: Traversable[Package] = Seq(Package("1", Set()), Package("2", Set()))
     override def change(oldKey: String, updates: Package): Self = stub(i * 11 + 17)
     override def add(f: String): Self = stub(i * 17 + 11)

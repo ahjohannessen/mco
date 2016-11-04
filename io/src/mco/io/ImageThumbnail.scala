@@ -3,7 +3,7 @@ package mco.io
 import java.net.URL
 
 import cats.implicits._
-import mco.{Media, Thumbnail}
+import mco.Thumbnail
 import mco.io.files._
 
 final class ImageThumbnail (val path: Path) extends Thumbnail[IO] {
@@ -29,7 +29,8 @@ final class ImageThumbnail (val path: Path) extends Thumbnail[IO] {
       _ <- Fail.UnexpectedType(location, "existing file") when !isFile
       ext <- fromPath.extension
         .filter(ImageExtensions.contains)
-        .orFail(Fail.UnexpectedType(location, s"${ImageExtensions.mkString} image"))
+        .pure[IO]
+        .orFail(Fail.UnexpectedType(location, s"${ImageExtensions mkString ", "} image"))
       _ <- discardThumbnail
       toPath = Path(s"${path.asString}.$ext")
       _ <- copyTree(fromPath, toPath)
@@ -41,16 +42,19 @@ final class ImageThumbnail (val path: Path) extends Thumbnail[IO] {
       .map(ext => Path(s"${path.asString}.$ext"))
       .traverse_(removeIfExists)
 
-  override def reassociate(from: String, to: String): IO[Unit] = {
+  override def reassociate(to: String): IO[Unit] = {
+    def moveIfExists(from: Path, to: Path) = pathExists(from) flatMap
+      { if (_) moveTree(from, to) else ().pure[IO] }
+    val parent = path.parent
     ImageExtensions
-      .map(ext => (Path(s"$from.$ext"), Path(s"$to.$ext")))
-      .traverse_[IO, Unit](t => moveTree(t._1, t._2))
+      .map(ext => (Path(s"${path.asString}.$ext"), parent / s"$to.$ext"))
+      .traverse_[IO, Unit]({ moveIfExists _ }.tupled)
   }
 }
 
 object ImageThumbnail {
-  trait Provided { this: Media[IO] =>
+  trait Provided {
     def path: Path
-    final override def thumbnail: ImageThumbnail = new ImageThumbnail(path)
+    final def thumbnail: ImageThumbnail = new ImageThumbnail(path)
   }
 }

@@ -24,7 +24,7 @@ final class FolderSource private (backingFolder: Path,
     conflict   <- pathExists(backingFolder / to)
     _          <- Fail.NameConflict(to) when conflict
     oldMedia   <- getMedia(backingFolder / to).orDie
-    _          <- oldMedia.thumbnail.reassociate(from, to)
+    _          <- oldMedia.thumbnail.reassociate(to)
     _          <- moveTree(backingFolder / from, backingFolder / to)
     media      <- getMedia(backingFolder / to).orDie
   } yield media

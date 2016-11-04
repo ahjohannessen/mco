@@ -30,16 +30,15 @@ trait Thumbnail[M[_]] { self =>
     * Basically a `setThumbnail` on new media followed up with
     * `discardThumbnail` on old one - except no media needed
     *
-    * @param from old name of associated package
     * @param to new name of associated package
     */
-  def reassociate(from: String, to: String): M[Unit]
+  def reassociate(to: String): M[Unit]
 
 
   final def mapK[G[_]](f: M ~> G): Thumbnail[G] = new Thumbnail[G] {
     override def url: G[Option[URL]] = f(self.url)
     override def discardThumbnail: G[Unit] = f(self.discardThumbnail)
     override def setThumbnail(location: String): G[Unit] = f(self.setThumbnail(location))
-    override def reassociate(from: String, to: String): G[Unit] = f(self.reassociate(from, to))
+    override def reassociate(to: String): G[Unit] = f(self.reassociate(to))
   }
 }

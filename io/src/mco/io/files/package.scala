@@ -29,14 +29,14 @@ package object files {
     def when(p: Boolean): IO[Unit] = if (p) fail.io[Unit] else ().pure[IO]
   }
 
-  implicit class OptionSyntax[A](val option: Option[A]) extends AnyVal {
-    def orRun(io: IO[A]): IO[A] = option map IO.pure getOrElse io
-    def orFail(failure: Fail): IO[A] = orRun(failure.io)
-    def orDie: IO[A] = orFail(Fail.InvariantViolation())
-  }
+//  implicit class OptionSyntax[A](val option: Option[A]) extends AnyVal {
+//    def orRun(io: IO[A]): IO[A] = option map IO.pure getOrElse io
+//    def orFail(failure: Fail): IO[A] = orRun(failure.io)
+//    def orDie: IO[A] = orFail(Fail.InvariantViolation())
+//  }
 
   implicit class IOOptionSyntax[A](val io: IO[Option[A]]) extends AnyVal {
-    def orRun(alt: IO[A]): IO[A] = io flatMap (_ orRun alt)
+    def orRun(alt: IO[A]): IO[A] = io flatMap (_ map IO.pure getOrElse alt)
     def orFail(failure: Fail): IO[A] = orRun(failure.io)
     def orDie: IO[A] = orFail(Fail.InvariantViolation())
   }

@@ -6,15 +6,21 @@ import better.files.File
 
 
 case class Path(str: String) {
-  val normalized: String = str.replace('\\', '/')
+  val normalized: String = str.replace('\\', '/').stripSuffix("/")
   private[io] def f: File = File(str)
   def relativeToS(other: Path): String = other.f.relativize(f).toString.replace('\\', '/')
   def asString: String = str
   def fileName: String = normalized.drop(normalized.lastIndexOf("/") + 1)
   def extension: Option[String] = {
-    val dotIndex = fileName indexOf '.'
+    val dotIndex = fileName lastIndexOf '.'
     if (dotIndex != -1) Some(fileName.drop(dotIndex + 1))
     else None
+  }
+
+  def parent: Path = {
+    val li = normalized lastIndexOf '/'
+    if (li > 0) Path(normalized take (li + 1))
+    else Path("")
   }
 
   def /(right: String): Path = Path(s"$normalized/$right")

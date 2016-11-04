@@ -77,6 +77,10 @@ class IsolatedRepoSpec extends UnitSpec {
     repo.packages should contain theSameElementsAs Seq(repo("package1"), repo("package2"))
   }
 
+  "IsolatedRepo#thumbnail" should "provide thumbnail for media with given key" in {
+    repo.thumbnail("package1") shouldBe NoThumbnail
+  }
+
   "IsolatedRepo#add" should "push object to file system and create a package from it" in {
     val addIO = repo add "deeply/nested/object"
     val (state, nextRepo) = io(addIO)

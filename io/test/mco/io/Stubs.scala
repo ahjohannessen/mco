@@ -9,15 +9,15 @@ import cats.instances.vector._
 import mco.{Media, Package, Source, Thumbnail}
 
 object Stubs {
+  object NoThumbnail extends Thumbnail[IO] {
+    override def url: IO[Option[URL]] = none[URL].pure[IO]
+    override def setThumbnail(location: String): IO[Unit] = ().pure[IO]
+    override def discardThumbnail: IO[Unit] = ().pure[IO]
+    override def reassociate(to: String): IO[Unit] = ().pure[IO]
+  }
+
   def media(mappings: (String, Set[String])*): Media.Companion[IO] = new Media.Companion[IO] {
     private val map = mappings.toMap
-
-    object NoThumbnail extends Thumbnail[IO] {
-      override def url: IO[Option[URL]] = none[URL].pure[IO]
-      override def setThumbnail(location: String): IO[Unit] = ().pure[IO]
-      override def discardThumbnail: IO[Unit] = ().pure[IO]
-      override def reassociate(from: String, to: String): IO[Unit] = ().pure[IO]
-    }
 
     class MediaStub(path: Path, cnt: Set[String]) extends Media[IO] {
 
