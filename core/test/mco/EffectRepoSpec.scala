@@ -35,10 +35,10 @@ class EffectRepoSpec extends UnitSpec {
     override def apply(key: String): Package = Package(key, Set())
 
     override def thumbnail(key: String): Thumbnail[(String, ?)] = new Thumbnail[(String, ?)] {
-      override def discardThumbnail: (String, Unit) = ("discardThumbnail", ())
+      override def discard: (String, Unit) = ("discardThumbnail", ())
       override def reassociate(to: String): (String, Unit) = ("reassociate", ())
       override def url: (String, Option[URL]) = ("url", None)
-      override def setThumbnail(location: String): (String, Unit) = ("setThumbnail", ())
+      override def setFrom(location: String): (String, Unit) = ("setThumbnail", ())
     }
 
     override def packages: Traversable[Package] = Seq(Package("1", Set()), Package("2", Set()))

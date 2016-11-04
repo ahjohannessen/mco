@@ -21,7 +21,7 @@ final class ImageThumbnail (val path: Path) extends Thumbnail[IO] {
       .map(_.foldK)
   }
 
-  override def setThumbnail(location: String): IO[Unit] = {
+  override def setFrom(location: String): IO[Unit] = {
     val fromPath = Path(location)
 
     for {
@@ -31,13 +31,13 @@ final class ImageThumbnail (val path: Path) extends Thumbnail[IO] {
         .filter(ImageExtensions.contains)
         .pure[IO]
         .orFail(Fail.UnexpectedType(location, s"${ImageExtensions mkString ", "} image"))
-      _ <- discardThumbnail
+      _ <- discard
       toPath = Path(s"${path.asString}.$ext")
       _ <- copyTree(fromPath, toPath)
     } yield ()
   }
 
-  override def discardThumbnail: IO[Unit] =
+  override def discard: IO[Unit] =
     ImageExtensions
       .map(ext => Path(s"${path.asString}.$ext"))
       .traverse_(removeIfExists)

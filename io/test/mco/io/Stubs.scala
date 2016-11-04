@@ -11,8 +11,8 @@ import mco.{Media, Package, Source, Thumbnail}
 object Stubs {
   object NoThumbnail extends Thumbnail[IO] {
     override def url: IO[Option[URL]] = none[URL].pure[IO]
-    override def setThumbnail(location: String): IO[Unit] = ().pure[IO]
-    override def discardThumbnail: IO[Unit] = ().pure[IO]
+    override def setFrom(location: String): IO[Unit] = ().pure[IO]
+    override def discard: IO[Unit] = ().pure[IO]
     override def reassociate(to: String): IO[Unit] = ().pure[IO]
   }
 

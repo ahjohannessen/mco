@@ -31,34 +31,34 @@ class ImageThumbnailSpec extends UnitSpec {
     stub.value(url) map (_.toString takeRight 4) shouldBe Some(".png")
   }
 
-  "ImageThumbnail#discardThumbnail" should "remove all adjacent images" in {
-    val discardIO = new ImageThumbnail(Path("withTwo")).discardThumbnail
+  "ImageThumbnail#discard" should "remove all adjacent images" in {
+    val discardIO = new ImageThumbnail(Path("withTwo")).discard
     val nextState = stub.state(discardIO)
     deepGet(Path("withTwo.png"))(nextState) shouldBe empty
     deepGet(Path("withTwo.jpg"))(nextState) shouldBe empty
   }
 
-  "ImageThumbnail#setThumbnail" should "rename thumbnail if it is a valid image" in {
-    val setIO = new ImageThumbnail(Path("foome")) setThumbnail "withPng.z.png"
+  "ImageThumbnail#setFrom" should "rename thumbnail if it is a valid image" in {
+    val setIO = new ImageThumbnail(Path("foome")) setFrom "withPng.z.png"
     val nextState = stub.state(setIO)
     deepGet(Path("foome.png"))(nextState) should not be empty
     deepGet(Path("withPng.z.png"))(nextState) should not be empty
   }
 
   it should "fail if path leads to a directory or does not exist" in {
-    val io = new ImageThumbnail(Path("justMe")) setThumbnail "notExisting.jpg"
+    val io = new ImageThumbnail(Path("justMe")) setFrom "notExisting.jpg"
     a [Fail.UnexpectedType] shouldBe thrownBy {
       stub(io)
     }
 
-    val io2 = new ImageThumbnail(Path("test")) setThumbnail "bogus.png"
+    val io2 = new ImageThumbnail(Path("test")) setFrom "bogus.png"
     a [Fail.UnexpectedType] shouldBe thrownBy {
       stub(io2)
     }
   }
 
   it should "fail if extension is not JPG, JPEG or PNG" in {
-    val io = new ImageThumbnail(Path("test")) setThumbnail "bogus.foo"
+    val io = new ImageThumbnail(Path("test")) setFrom "bogus.foo"
 
     a [Fail.UnexpectedType] shouldBe thrownBy {
       stub(io)

@@ -43,10 +43,10 @@ class PersistedRepoSpec extends UnitSpec {
     override def state: Int = i
     override def apply(key: String): Package = Package(key, Set())
     override def thumbnail(key: String): Thumbnail[Id] = new Thumbnail[Id] {
-      override def discardThumbnail: Unit = ()
+      override def discard: Unit = ()
       override def reassociate(to: String): Unit = ()
       override def url: Option[URL] = None
-      override def setThumbnail(location: String): Unit = ()
+      override def setFrom(location: String): Unit = ()
     }
     override def packages: Traversable[Package] = Seq(Package("1", Set()), Package("2", Set()))
     override def change(oldKey: String, updates: Package): Self = stub(i * 11 + 17)

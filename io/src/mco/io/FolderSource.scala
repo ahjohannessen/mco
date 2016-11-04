@@ -50,7 +50,7 @@ final class FolderSource private (backingFolder: Path,
 
   override def remove(key: String): IO[Unit] = for {
       media <- getMedia(backingFolder / key) orFail Fail.MissingResource(key)
-      _ <- media.thumbnail.discardThumbnail
+      _ <- media.thumbnail.discard
       _ <- removeFile(backingFolder / key)
     } yield ()
 }
