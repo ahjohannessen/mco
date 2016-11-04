@@ -1,13 +1,11 @@
 package mco.config
 
-
-import scala.language.higherKinds
 import scala.util.Try
 
+import cats.arrow.FunctionK
 import cats.instances.try_._
 import cats.instances.vector._
 import cats.syntax.all._
-import cats.{Functor, Monad, ~>}
 import mco._
 import mco.io.files.{IO, Path}
 import mco.io.{FolderSource, IsolatedRepo}
@@ -26,18 +24,16 @@ object LoadedRepo {
     IO.sequence(classifier(c) |@| media(c) map ((cls, ms) => FolderSource(c.source, cls, ms: _*)))
       .absorbTry
 
-  private def repo[F[_]: Functor](c: RepoConfig, nat: IO ~> F)(src: Source[IO]): F[Repository[F, Unit]] =
+  private def repo(c: RepoConfig)(src: Source[IO]): IO[Repository[IO, Unit]] =
     (c.kind, c.persistency) match {
       case (RepoKind.Isolated, Persistency.JSON) =>
-        nat(JsonStorage.preload(c.key, IsolatedRepo, Path(c.key + ".json"), c.target, src))
-          .map(new EffectRepo(_, nat))
+        JsonStorage.preload(c.key, IsolatedRepo, Path(c.key + ".json"), c.target, src)
+          .map(new EffectRepo(_, FunctionK.id[IO]))
 
       case (RepoKind.Isolated, Persistency.None) =>
-        nat(IsolatedRepo(c.key, src, c.target, Set()))
-          .map(new EffectRepo(_, nat))
+        IsolatedRepo(c.key, src, c.target, Set())
+          .map(new EffectRepo(_, FunctionK.id[IO]))
     }
 
-  // TODO - nat here might not at all be necessary
-  def apply[F[_]: Monad](c: RepoConfig, nat: IO ~> F): F[Repository[F, Unit]] =
-    nat(source(c)) flatMap repo(c, nat)
+  def apply(c: RepoConfig): IO[Repository[IO, Unit]] = source(c) flatMap repo(c)
 }

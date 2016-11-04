@@ -24,7 +24,7 @@ object ExecIOState extends ExecState[IO, Repository[IO, Unit]] {
 
     for {
       configs <- loadConfigTry.absorbTry
-      repos <- configs.toVector.traverse(LoadedRepo(_, FunctionK.id[IO]))
+      repos <- configs.toVector.traverse(LoadedRepo(_))
     } yield repos
   }
 
