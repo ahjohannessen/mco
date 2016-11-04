@@ -59,40 +59,44 @@ object RepoPackagesTable extends UIComponent[UIState, TableView[Package]] {
         }
       }
 
-      columns ++= Seq(
-        new TableColumn[Package, Package] {
-          text = "S."
-          maxWidth = 32
-          resizable = false
-          editable = true
-          cellFactory = _ => new CheckBoxTableCell[Package, Package](i => {
-            def pkg = table.items.getValue.get(i)
-            val prop = BooleanProperty(pkg.isInstalled)
-            prop.observe()
-              .tail
-              .foreach(b => act(if (b) InstallPackage(pkg) else UninstallPackage(pkg)))
-            prop
-          }) {
-            padding = Insets(0)
-          }
-        },
-        new TableColumn[Package, String] {
-          maxWidth <== table.width - 32 - 20 // 20 for horizontal scrollbar
-          text = "Package name"
-          editable = true
-          cellFactory = _ => new TextFieldTableCell[Package, String](new DefaultStringConverter()) {
-            editable = true
-          }
-          cellValueFactory = s => { ObjectProperty(s.value.key) }
+      columns ++= Seq(checkboxColumn(table, act), titleColumn(table, act))
+    }
 
-          onEditCommit = (ev: CellEditEvent[Package, String]) => {
-            // Reset value shown in cell to non-updated,
-            // because update might fail later on
-            // underlying model, and if it doesn't, we'll
-            // redraw it anyway
-            table.delegate.refresh()
-            act(RenamePackage(ev.oldValue, ev.newValue))
-          }
-        })
+  private def checkboxColumn(table: TableView[Package], act: UIAction => Unit) =
+    new TableColumn[Package, Package] {
+      text = "S."
+      maxWidth = 32
+      resizable = false
+      editable = true
+      cellFactory = _ => new CheckBoxTableCell[Package, Package](i => {
+        def pkg = table.items.getValue.get(i)
+        val prop = BooleanProperty(pkg.isInstalled)
+        prop.observe()
+          .tail
+          .foreach(b => act(if (b) InstallPackage(pkg) else UninstallPackage(pkg)))
+        prop
+      }) {
+        padding = Insets(0)
+      }
+    }
+
+  private def titleColumn(table: TableView[Package], act: UIAction => Unit) =
+    new TableColumn[Package, String] {
+      maxWidth <== table.width - 32 - 20 // 20 for horizontal scrollbar
+      text = "Package name"
+      editable = true
+      cellFactory = _ => new TextFieldTableCell[Package, String](new DefaultStringConverter()) {
+        editable = true
+      }
+      cellValueFactory = s => { ObjectProperty(s.value.key) }
+
+      onEditCommit = (ev: CellEditEvent[Package, String]) => {
+        // Reset value shown in cell to non-updated,
+        // because update might fail later on
+        // underlying model, and if it doesn't, we'll
+        // redraw it anyway
+        table.delegate.refresh()
+        act(RenamePackage(ev.oldValue, ev.newValue))
+      }
     }
 }
