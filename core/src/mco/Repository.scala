@@ -1,7 +1,5 @@
 package mco
 
-import java.net.URL
-
 import scala.language.higherKinds
 
 trait Repository[M[_], S] {
@@ -11,7 +9,7 @@ trait Repository[M[_], S] {
   def state: S
 
   def apply(key: String): Package
-  def thumbnail(key: String): M[Option[URL]]
+  def thumbnail(key: String): Thumbnail[M]
   def packages: Traversable[Package]
 
   final def change(oldKey: String, update: Package => Package): M[Self] =

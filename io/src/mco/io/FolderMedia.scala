@@ -8,7 +8,7 @@ import cats.syntax.functor._
 import cats.instances.vector._
 import mco.Media
 
-final class FolderMedia private (val path: Path) extends Media[IO] with NeighborFileThumbnail {
+final class FolderMedia private (val path: Path) extends Media[IO] with ImageThumbnail.Provided {
   override val key: String = path.fileName
 
   override def contentKeys: IO[Set[String]] =

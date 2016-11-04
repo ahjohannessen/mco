@@ -43,7 +43,7 @@ object ExecIOState extends ExecState[IO, Repository[IO, Unit]] {
 
     action match {
       case SetActivePackage(p) =>
-        val url = attemptRun(repo.thumbnail(p.key)).toOption.flatten
+        val url = attemptRun(repo.thumbnail(p.key).url).toOption.flatten
         val nextState = state.copy(currentPackage = p.some, thumbnailURL = url)
         (repo, nextState).pure[IO]
       case ClearActivePackage => repo.pure[IO] |> withNewState

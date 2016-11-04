@@ -1,7 +1,5 @@
 package mco
 
-import java.net.URL
-
 import cats._
 import cats.data.Const
 
@@ -34,7 +32,7 @@ class EffectRepoSpec extends UnitSpec {
     override def state: Int = 42
     override def apply(key: String): Package = Package(key, Set())
 
-    override def thumbnail(key: String): (String, Option[URL]) = ("thumb", None)
+    override def thumbnail(key: String): Thumbnail[(String, ?)] = sys.error("stub")
 
     override def packages: Traversable[Package] = Seq(Package("1", Set()), Package("2", Set()))
 

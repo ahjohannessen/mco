@@ -2,15 +2,13 @@ package mco.io
 
 import java.net.URL
 
-import mco.Media
-import mco.io.files._
 import cats.implicits._
+import mco.{Media, Thumbnail}
+import mco.io.files._
 
-trait NeighborFileThumbnail { this: Media[IO] =>
+final class ImageThumbnail (val path: Path) extends Thumbnail[IO] {
 
-  def path: Path
-
-  final override def thumbnail: IO[Option[URL]] = {
+  override def url: IO[Option[URL]] = {
     def urlIfExists(file: Path)(exists: Boolean) =
       if (exists) Some(file.toURL) else None
 
@@ -23,7 +21,7 @@ trait NeighborFileThumbnail { this: Media[IO] =>
       .map(_.foldK)
   }
 
-  final override def setThumbnail(location: String): IO[Unit] = {
+  override def setThumbnail(location: String): IO[Unit] = {
     val fromPath = Path(location)
 
     for {
@@ -31,16 +29,28 @@ trait NeighborFileThumbnail { this: Media[IO] =>
       _ <- Fail.UnexpectedType(location, "existing file") when !isFile
       ext <- fromPath.extension
         .filter(ImageExtensions.contains)
-        .map(IO.pure)
-        .getOrElse(Fail.UnexpectedType(location, s"${ImageExtensions.mkString} image").io)
+        .orFail(Fail.UnexpectedType(location, s"${ImageExtensions.mkString} image"))
       _ <- discardThumbnail
       toPath = Path(s"${path.asString}.$ext")
       _ <- copyTree(fromPath, toPath)
     } yield ()
   }
 
-  final override def discardThumbnail: IO[Unit] =
+  override def discardThumbnail: IO[Unit] =
     ImageExtensions
       .map(ext => Path(s"${path.asString}.$ext"))
       .traverse_(removeIfExists)
+
+  override def reassociate(from: String, to: String): IO[Unit] = {
+    ImageExtensions
+      .map(ext => (Path(s"$from.$ext"), Path(s"$to.$ext")))
+      .traverse_[IO, Unit](t => moveTree(t._1, t._2))
+  }
+}
+
+object ImageThumbnail {
+  trait Provided { this: Media[IO] =>
+    def path: Path
+    final override def thumbnail: ImageThumbnail = new ImageThumbnail(path)
+  }
 }

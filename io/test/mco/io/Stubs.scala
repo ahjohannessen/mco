@@ -4,20 +4,24 @@ import java.net.URL
 
 import mco.io.files._
 import cats.syntax.applicative._
+import cats.syntax.option._
 import cats.instances.vector._
-import mco.{Media, Package, Source}
+import mco.{Media, Package, Source, Thumbnail}
 
 object Stubs {
   def media(mappings: (String, Set[String])*): Media.Companion[IO] = new Media.Companion[IO] {
     private val map = mappings.toMap
 
+    object NoThumbnail extends Thumbnail[IO] {
+      override def url: IO[Option[URL]] = none[URL].pure[IO]
+      override def setThumbnail(location: String): IO[Unit] = ().pure[IO]
+      override def discardThumbnail: IO[Unit] = ().pure[IO]
+      override def reassociate(from: String, to: String): IO[Unit] = ().pure[IO]
+    }
+
     class MediaStub(path: Path, cnt: Set[String]) extends Media[IO] {
 
-      override def thumbnail: IO[Option[URL]] = IO.pure(None)
-
-      override def setThumbnail(location: String): IO[Unit] = ().pure[IO]
-
-      override def discardThumbnail: IO[Unit] = ().pure[IO]
+      override def thumbnail: Thumbnail[IO] = NoThumbnail
 
       override val key: String = path.fileName
 

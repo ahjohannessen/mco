@@ -1,7 +1,5 @@
 package mco
 
-import java.net.URL
-
 import scala.language.higherKinds
 
 /**
@@ -30,22 +28,10 @@ trait Media[M[_]] {
   def copy(locations: Map[String, String]): M[Unit]
 
   /**
-    * Get thumbnail associated with this media's package.
-    * Thumbnail is provided as [[java.net.URL]] for convenience
-    * @return `Some(< thumbnail URL >)`, if thumbnail exists
+    * get thumbnail associated with current Media
+    * @return
     */
-  def thumbnail: M[Option[URL]]
-
-  /**
-    * Associate thumbnail from given location with this media.
-    * @param location place to look thumbnail for
-    */
-  def setThumbnail(location: String): M[Unit]
-
-  /**
-    * Remove any thumbnail associated with this media.
-    */
-  def discardThumbnail: M[Unit]
+  def thumbnail: Thumbnail[M]
 }
 
 object Media {

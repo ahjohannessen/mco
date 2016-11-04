@@ -1,7 +1,5 @@
 package mco
 
-import java.net.URL
-
 import scala.language.higherKinds
 
 import cats.syntax.functor._
@@ -13,7 +11,7 @@ class EffectRepo[F[_], G[_]: Functor, S](wrapped: Repository[F, S], nat: F ~> G)
   override def key: String = wrapped.key
   override def state: Unit = ()
   override def apply(key: String): Package = wrapped(key)
-  override def thumbnail(key: String): G[Option[URL]] = nat(wrapped.thumbnail(key))
+  override def thumbnail(key: String): Thumbnail[G] = wrapped.thumbnail(key).mapK(nat)
   override def packages: Traversable[Package] = wrapped.packages
 
 

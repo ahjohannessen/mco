@@ -2,7 +2,6 @@ package mco.io
 
 import cats.instances.option._
 import cats.instances.stream._
-import cats.instances.vector._
 import cats.syntax.all._
 import mco._
 import mco.Media.{Companion => MediaC}
@@ -24,9 +23,10 @@ final class FolderSource private (backingFolder: Path,
   override def rename(from: String, to: String): IO[Media[IO]] = for {
     conflict   <- pathExists(backingFolder / to)
     _          <- Fail.NameConflict(to) when conflict
+    oldMedia   <- getMedia(backingFolder / to).orDie
+    _          <- oldMedia.thumbnail.reassociate(from, to)
     _          <- moveTree(backingFolder / from, backingFolder / to)
-    maybeMedia <- getMedia(backingFolder / to)
-    media      <- maybeMedia map IO.pure getOrElse Fail.InvariantViolation().io
+    media      <- getMedia(backingFolder / to).orDie
   } yield media
 
   override def add(key: String): IO[(Package, Media[IO])] = {
@@ -39,25 +39,20 @@ final class FolderSource private (backingFolder: Path,
       conflicts  <- pathExists(toPath)
       _          <- Fail.NameConflict(key) when conflicts
       _          <- copyTree(fromPath, toPath)
-      maybeMedia <- getMedia(toPath)
 
-      media      <- maybeMedia
-        .map(IO.pure)
-        .getOrElse(removeFile(toPath) followedBy
+      media      <- getMedia(toPath).orRun(
+        removeFile(toPath) followedBy
           Fail.UnexpectedType(key, "supported media").io)
 
       pkg        <- classifier(media)
     } yield (pkg, media)
   }
 
-  override def remove(key: String): IO[Unit] = {
-    def removeIf(path: Path)(cond: Boolean) =
-      if(cond) removeFile(path) else IO.pure(())
-
-    (key +: ImageExtensions.map(key + "." + _))
-      .map(backingFolder / _)
-      .traverse_[IO, Unit](path => pathExists(path) flatMap removeIf(path))
-  }
+  override def remove(key: String): IO[Unit] = for {
+      media <- getMedia(backingFolder / key) orFail Fail.MissingResource(key)
+      _ <- media.thumbnail.discardThumbnail
+      _ <- removeFile(backingFolder / key)
+    } yield ()
 }
 
 object FolderSource {
