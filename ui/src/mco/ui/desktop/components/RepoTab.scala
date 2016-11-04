@@ -1,8 +1,8 @@
 package mco.ui.desktop.components
 
 import scalafx.geometry.Insets
-import scalafx.scene.control.{Label, Tab}
-import scalafx.scene.layout.{HBox, Priority, VBox}
+import scalafx.scene.control.Tab
+import scalafx.scene.layout.{HBox, VBox}
 
 import mco.Content
 import mco.ui.desktop.UIComponent
