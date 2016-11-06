@@ -16,6 +16,7 @@ trait Thumbnail[M[_]] { self =>
 
   /**
     * Associate thumbnail from given location with this media.
+    * Discards any thumbnail previously associated.
     * @param location place to look thumbnail for
     */
   def setFrom(location: String): M[Unit]
