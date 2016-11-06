@@ -24,7 +24,7 @@ case class UIState(
           case c: Any => c
         }))
       ).some
-    case AddObjects(_) => none
+    case AddObjects(_, _) => none
   }
 
   private def updateFn(key: String, f: Package => Package)(pkg: Package) = pkg match {

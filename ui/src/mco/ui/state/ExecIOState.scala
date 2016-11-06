@@ -2,12 +2,12 @@ package mco.ui.state
 
 import scala.util.Try
 
-import cats.arrow.FunctionK
 import cats.instances.vector._
 import cats.syntax.all._
 import com.typesafe.config.ConfigFactory
 import mco._
 import mco.config.{LoadedRepo, RepoConfigs}
+import mco.io.Fail
 import mco.io.files._
 import mco.ui.state.PipeSyntax._
 
@@ -37,7 +37,10 @@ object ExecIOState extends ExecState[IO, Repository[IO, Unit]] {
       updated
         .fproduct(r => state changeBy action getOrElse loadInitialState(r).copy(
           currentPackage = state.currentPackage,
-          thumbnailURL = state.thumbnailURL
+          thumbnailURL = state.currentPackage
+            .map(p => repo.thumbnail(p.key).url)
+            .flatMap(attemptRun(_).toOption)
+            .flatten
         ))
     }
 
@@ -60,9 +63,19 @@ object ExecIOState extends ExecState[IO, Repository[IO, Unit]] {
               case c if c.key == contentKey => c.copy(kind = kind)
               case c: Any => c
             }))) |> withNewState
-      case AddObjects(paths) =>
+      case AddObjects(paths, AdditionContext.Packages) =>
         paths.foldM[IO, Repository[IO, Unit]](repo)(_ add _) |> withNewState
 
+      case AddObjects(Vector(imgPath), AdditionContext.Thumbnail) =>
+        state.currentPackage
+          .map(_.key)
+          .map(repo.thumbnail)
+          .map(_ setFrom imgPath)
+          .getOrElse(().pure[IO])
+          .as(repo) |> withNewState
+
+      case AddObjects(_, AdditionContext.Thumbnail) =>
+        Fail.UnexpectedType("dropped elements", "just one image").io
     }
   }
 

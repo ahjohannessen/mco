@@ -7,12 +7,11 @@ import scalafx.geometry.Insets
 import scalafx.scene.control.TableColumn._
 import scalafx.scene.control.{TableColumn, TableRow, TableView}
 import scalafx.scene.control.cell.{CheckBoxTableCell, TextFieldTableCell}
-import scalafx.scene.input.{DragEvent, TransferMode}
 import scalafx.scene.layout.Priority
 import scalafx.util.converter.DefaultStringConverter
 
 import mco.Package
-import mco.ui.desktop.UIComponent
+import mco.ui.desktop.{DropFilesReceiver, UIComponent}
 import mco.ui.desktop.ObservableBinding._
 import mco.ui.state._
 import monix.reactive.Observable
@@ -20,23 +19,10 @@ import monix.execution.Scheduler.Implicits.global
 
 object RepoPackagesTable extends UIComponent[UIState, TableView[Package]] {
   override def apply(states: Observable[UIState], act: (UIAction) => Unit): TableView[Package] =
-    new TableView[Package] { table =>
-      onDragOver = (ev: DragEvent) => {
-        if (ev.dragboard.hasFiles) {
-          ev.acceptTransferModes(TransferMode.Copy)
-        } else {
-          ev.consume()
-        }
-      }
+    new TableView[Package] with DropFilesReceiver { table =>
 
-      onDragDropped = (ev: DragEvent) => {
-        val hadFiles = ev.dragboard.hasFiles
-        if (hadFiles) {
-          act(AddObjects(ev.dragboard.files.map(_.getAbsolutePath).toVector))
-        }
-        ev.setDropCompleted(hadFiles)
-        ev.consume()
-      }
+      override def onFilesReceived(paths: Vector[String]): Unit =
+        act(AddObjects(paths, AdditionContext.Packages))
 
       states
         .map(s => s.currentPackage.map(s.packages.indexOf))
