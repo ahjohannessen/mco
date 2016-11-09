@@ -1,5 +1,7 @@
 package mco.io.files
 
+import java.nio.file.attribute.BasicFileAttributes
+
 import cats.free.Free
 import freasymonad.cats.free
 
@@ -20,5 +22,6 @@ import freasymonad.cats.free
   def createDirectory(path: Path)                : FreeIO[Unit]
   def copyTree(source: Path, dest: Path)         : FreeIO[Unit]
   def moveTree(source: Path, dest: Path)         : FreeIO[Unit]
+  def stat(path: Path)                           : FreeIO[BasicFileAttributes]
 }
 // $COVERAGE-ON

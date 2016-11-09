@@ -2,6 +2,9 @@ package mco
 
 import scala.language.higherKinds
 
+import cats.Functor
+import cats.syntax.functor._
+
 trait Repository[M[_], S] {
   final type Self = Repository[M, S]
 
@@ -17,7 +20,13 @@ trait Repository[M[_], S] {
 
   def change(oldKey: String, updates: Package): M[Self]
 
-  def add(f: String): M[Self]
+  def canAdd(f: String): M[Boolean]
+
+  def add(f: String): M[(Package, Self)]
+
+  final def add_(f: String)(implicit M: Functor[M]): M[Self] =
+    this add f map { case (_, repo) => repo }
+
   def remove(s: String): M[Self]
 
   final def widen: Self = this

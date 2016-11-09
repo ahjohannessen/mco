@@ -110,4 +110,14 @@ class FolderSourceSpec extends UnitSpec {
       run(src rename ("folder", "zondar"))
     }
   }
+
+  "FolderSource#canAdd" should "be true when and only when media exists" in {
+    val src = FolderSource("storage", classifier, media("another folder" -> emptys))
+
+    val (_, resultIfMediaExists) = src flatMap (_ canAdd "another folder") on stub
+    resultIfMediaExists shouldBe true
+
+    val (_, resultIfMediaMissing) = src flatMap (_ canAdd "folder") on stub
+    resultIfMediaMissing shouldBe false
+  }
 }

@@ -3,6 +3,7 @@ package mco
 import scala.language.higherKinds
 
 import cats.syntax.functor._
+import cats.instances.tuple._
 import cats.{Functor, ~>}
 
 class EffectRepo[F[_], G[_]: Functor, S](wrapped: Repository[F, S], nat: F ~> G)
@@ -20,9 +21,11 @@ class EffectRepo[F[_], G[_]: Functor, S](wrapped: Repository[F, S], nat: F ~> G)
   override def change(oldKey: String, updates: Package): G[Self] =
     nat(wrapped change (oldKey, updates)) map wrap
 
-  override def add(f: String): G[Self] =
-    nat(wrapped add f) map wrap
+  override def add(f: String): G[(Package, Self)] =
+    nat(wrapped add f) map (_.map(wrap))
 
   override def remove(s: String): G[Self] =
     nat(wrapped remove s) map wrap
+
+  override def canAdd(f: String): G[Boolean] = nat(wrapped canAdd f)
 }

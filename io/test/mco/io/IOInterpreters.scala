@@ -1,5 +1,10 @@
 package mco.io
 
+import java.nio.file.attribute.{BasicFileAttributes, FileTime}
+import java.time.Instant
+
+import scala.concurrent.duration._
+
 import cats.data.State
 import cats.syntax.option._
 import cats.syntax.traverse._
@@ -9,14 +14,21 @@ import mco.io.files._
 object IOInterpreters {
   sealed trait FileSystemObject
   case class Dir(contents: Map[String, FileSystemObject]) extends FileSystemObject
-  case class Obj(data: Vector[Byte]) extends FileSystemObject
+  case class Obj(data: Vector[Byte], dt: FiniteDuration) extends FileSystemObject
   case class Arc(dir: Dir) extends FileSystemObject
 
   object FSDsl {
+
+    implicit class StubIOSyntax[A](val self: IO[A]) {
+      def on(fs: Dir): (Dir, A) = StubIORunner(fs)(self)
+    }
+
     def fs(seq: (String, FileSystemObject)*): Dir = Dir(seq.toMap)
     def dir(seq: (String, FileSystemObject)*): FileSystemObject = Dir(seq.toMap)
-    def obj(data: Vector[Byte] = Vector.empty): FileSystemObject = Obj(data)
-    def obj(data: Array[Byte]): FileSystemObject = Obj(data.toVector)
+    def obj(data: Vector[Byte] = Vector.empty, offset: FiniteDuration = 0.second) =
+      Obj(data, offset)
+
+    def obj(data: Array[Byte]): FileSystemObject = Obj(data.toVector, 0.second)
     def arc(seq: (String, FileSystemObject)*): FileSystemObject = Arc(Dir(seq.toMap))
 
     type FStub[A] = State[Dir, A]
@@ -71,7 +83,7 @@ object IOInterpreters {
       override def removeFile(path: Path): FStub[Unit] = State.modify(deepSet(path, none))
 
       override def isRegularFile(path: Path): FStub[Boolean] =  State.inspect({deepGet(path) _} andThen {
-        case Some(Arc(_) | Obj(_)) => true
+        case Some(Arc(_) | Obj(_, _)) => true
         case _ => false
       })
 
@@ -95,7 +107,7 @@ object IOInterpreters {
       } yield ()
 
       override def readBytes(path: Path): FStub[Array[Byte]] = State.inspect({deepGet(path) _} andThen {
-        case Some(Obj(data)) => data.toArray
+        case Some(Obj(data, _)) => data.toArray
         case _ => err(path)
       })
 
@@ -113,6 +125,32 @@ object IOInterpreters {
         _ <- State.modify(deepSet(dest, sourceCopy orElse err(dest)))
         _ <- State.modify(deepSet(source, none))
       } yield ()
+
+      override def stat(path: Path): FStub[BasicFileAttributes] = for {
+        objOpt <- State.inspect(deepGet(path))
+        obj = objOpt.getOrElse(err(path))
+        isDir <- isDirectory(path)
+        isFile <- isRegularFile(path)
+        defaultTime = FileTime.from(Instant.parse("2007-12-03T10:15:30.00Z"))
+        time = obj match {
+          case Obj(_, t) => FileTime.fromMillis(defaultTime.toMillis + t.toMillis)
+          case _ => defaultTime
+        }
+      } yield new BasicFileAttributes {
+        override def fileKey(): FileSystemObject = obj
+        override def isRegularFile: Boolean = isFile
+        override def isOther: Boolean = false
+        override def lastModifiedTime(): FileTime = time
+        override def size(): Long = obj match {
+          case Dir(_) => 0L
+          case Arc(_) => 18414L
+          case Obj(v, _) => v.length.toLong
+        }
+        override def isDirectory: Boolean = isDir
+        override def isSymbolicLink = false
+        override def creationTime(): FileTime = time
+        override def lastAccessTime(): FileTime = time
+      } : BasicFileAttributes
     }
 
     case class StubIORunner(fs: Dir) {

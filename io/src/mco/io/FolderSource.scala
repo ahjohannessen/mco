@@ -53,6 +53,8 @@ final class FolderSource private (backingFolder: Path,
       _ <- media.thumbnail.discard
       _ <- removeFile(backingFolder / key)
     } yield ()
+
+  override def canAdd(key: String): IO[Boolean] = getMedia(Path(key)) map (_.nonEmpty)
 }
 
 object FolderSource {

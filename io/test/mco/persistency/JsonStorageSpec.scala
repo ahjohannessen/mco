@@ -58,7 +58,7 @@ class JsonStorageSpec extends UnitSpec {
     val repo = JsonStorage.preload("test", fakeCompanion, Path("state.json"), "target", Stubs.emptySource)
     val io = repo
       .flatMap(_.change("foo", Package("foo", Set())))
-      .flatMap(_.add("bar"))
+      .flatMap(_.add_("bar"))
       .flatMap(_.remove("baz"))
 
     val state = StubIORunner(initialState).state(io)
@@ -87,11 +87,13 @@ class JsonStorageSpec extends UnitSpec {
       override def change(oldKey: String, updates: Package): IO[Self] =
         fakeRepo(state :+ 1).pure[IO]
 
-      override def add(f: String): IO[Self] =
-        fakeRepo(state :+ 2).pure[IO]
+      override def add(f: String): IO[(Package, Self)] =
+        (Package(f, Set()), fakeRepo(state :+ 2)).pure[IO]
 
       override def remove(s: String): IO[Self] =
         fakeRepo(state :+ 3).pure[IO]
+
+      override def canAdd(f: String): IO[Boolean] = false.pure[IO]
     }
 
   private def storage = new JsonStorage[Vector[Int]](Path("state.json"))

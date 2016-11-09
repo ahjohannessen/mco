@@ -92,11 +92,11 @@ class IsolatedRepo private (val key: String, source: Source[IO], target: Path, k
     new IsolatedRepo(key, source, target, nextKnown)
   }
 
-  override def add(f: String): IO[Self] = {
+  override def add(f: String): IO[(Package, Self)] = {
     for {
       data <- source add f
       fileName = Path(f).fileName
-    } yield new IsolatedRepo(key, source, target, known.updated(fileName, data)).widen
+    } yield (data._1, new IsolatedRepo(key, source, target, known.updated(fileName, data)).widen)
   }
 
   override def remove(s: String): IO[Self] = {
@@ -104,6 +104,8 @@ class IsolatedRepo private (val key: String, source: Source[IO], target: Path, k
     if (pkg.isInstalled) change(s, pkg.copy(isInstalled = false)) flatMap {_.remove(s)}
     else source remove s as new IsolatedRepo(key, source, target, known - s)
   }
+
+  override def canAdd(f: String): IO[Boolean] = source canAdd f
 }
 
 object IsolatedRepo extends Repository.Companion[IO, Set[Package]] {

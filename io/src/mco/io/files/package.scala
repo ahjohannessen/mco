@@ -1,5 +1,7 @@
 package mco.io
 
+import java.nio.file.attribute.BasicFileAttributes
+
 import scala.language.{higherKinds, implicitConversions}
 import scala.util.Try
 import scala.util.control.NonFatal
@@ -59,6 +61,7 @@ package object files {
   def createDirectory(path: Path) : IO[Unit] = ops.createDirectory(path)
   def copyTree(source: Path, dest: Path) : IO[Unit] = ops.copyTree(source, dest)
   def moveTree(source: Path, dest: Path) : IO[Unit] = ops.moveTree(source, dest)
+  def stat(path: Path): IO[BasicFileAttributes] = ops.stat(path)
 
   def pathExists(path: Path) : IO[Boolean] =
     ops.isDirectory(path) |@| ops.isRegularFile(path) map (_ || _)

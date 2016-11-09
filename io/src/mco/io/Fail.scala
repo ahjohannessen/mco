@@ -15,8 +15,11 @@ object Fail {
     extends RuntimeException(s"Name conflict: $name") with Fail
 
   case class UnexpectedType(name: String, expected: String)
-    extends RuntimeException(s"Expected $name to be $expected") with Fail
+    extends RuntimeException(s"$name is not $expected") with Fail
 
   case class InvariantViolation()
     extends RuntimeException("Unknown invariant violation") with Fail
+
+  case class MultipleFailures(fails: Fail*)
+    extends RuntimeException(s"<${fails.length} errors>") with Fail
 }

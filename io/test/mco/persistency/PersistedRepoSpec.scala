@@ -13,7 +13,7 @@ class PersistedRepoSpec extends UnitSpec {
     storeOp should equal (Update(stub().state, nextState))
 
     val (storeOp2, _) = new PersistedRepo(stub()).add("key")
-    val nextState2 = stub().add("key").state
+    val nextState2 = stub().add_("key").state
     storeOp2 should equal (Update(stub().state, nextState2))
 
     val (thumbnailOp, _) = new PersistedRepo(stub()).thumbnail("foo").url
@@ -38,6 +38,12 @@ class PersistedRepoSpec extends UnitSpec {
     persisted.key should equal (repo.key)
   }
 
+  it should "delegate #canAdd to wrapped repo, giving NoOp as operation" in {
+    val repo = stub()
+    val persisted = new PersistedRepo(repo)
+    persisted.canAdd("ooze") should equal ((NoOp, repo.canAdd("ooze")))
+  }
+
   def stub(i: Int = 0): Repository[Id, Int] = new Repository[Id, Int] {
     override def key: String = "test"
     override def state: Int = i
@@ -50,7 +56,8 @@ class PersistedRepoSpec extends UnitSpec {
     }
     override def packages: Traversable[Package] = Seq(Package("1", Set()), Package("2", Set()))
     override def change(oldKey: String, updates: Package): Self = stub(i * 11 + 17)
-    override def add(f: String): Self = stub(i * 17 + 11)
+    override def add(f: String): (Package, Self) = (apply(""), stub(i * 17 + 11))
     override def remove(s: String): Self = throw Fail.NameConflict("test exception")
+    override def canAdd(f: String): Boolean = false
   }
 }

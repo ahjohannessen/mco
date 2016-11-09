@@ -64,7 +64,7 @@ object ExecIOState extends ExecState[IO, Repository[IO, Unit]] {
               case c: Any => c
             }))) |> withNewState
       case AddObjects(paths, AdditionContext.Packages) =>
-        paths.foldM[IO, Repository[IO, Unit]](repo)(_ add _) |> withNewState
+        paths.foldM[IO, Repository[IO, Unit]](repo)(_ add_ _) |> withNewState
 
       case AddObjects(Vector(imgPath), AdditionContext.Thumbnail) =>
         state.currentPackage

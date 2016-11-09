@@ -9,7 +9,7 @@ import net.sf.sevenzipjbinding.SevenZip
 class UnsafeIOSpec extends fixture.FlatSpec with Matchers {
   "UnsafeIOInterpreter#childrenOf" should "list children of directory" in { dir =>
     val expected = Seq("test_folder", "test_archive.7z", "test_archive.rar", "test_archive.zip")
-    val actual = UnsafeIOInterpreter.childrenOf(dir) map (_ relativeToS dir)
+    val actual = childrenOf(dir) map (_ relativeToS dir)
     actual should contain theSameElementsAs expected
   }
 
@@ -119,6 +119,13 @@ class UnsafeIOSpec extends fixture.FlatSpec with Matchers {
     isDirectory(moved) shouldBe true
 
     descendantsOf(moved).map(_ relativeToS moved) should contain theSameElementsAs oldChildren
+  }
+
+  "UnsafeIOInterpreter#stat" should "read file attributes" in { dir =>
+    val subjectFile = dir / "test_archive.7z"
+    val (expected, actual) = (File(subjectFile.asString).attributes, stat(subjectFile))
+    actual.creationTime shouldEqual expected.creationTime
+    actual.size shouldEqual expected.size
   }
 
   override type FixtureParam = Path

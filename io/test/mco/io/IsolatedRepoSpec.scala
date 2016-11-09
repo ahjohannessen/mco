@@ -3,7 +3,9 @@ package mco.io
 import mco._
 import mco.io.IOInterpreters.FSDsl._
 import mco.io.Stubs._
-import mco.io.files.Path
+import mco.io.files.{IO, Path}
+
+import cats.syntax.all._
 
 class IsolatedRepoSpec extends UnitSpec {
 
@@ -83,7 +85,7 @@ class IsolatedRepoSpec extends UnitSpec {
 
   "IsolatedRepo#add" should "push object to file system and create a package from it" in {
     val addIO = repo add "deeply/nested/object"
-    val (state, nextRepo) = io(addIO)
+    val (state, (_, nextRepo)) = io(addIO)
     nextRepo.packages.map(_.key) should contain theSameElementsAs Seq("package1", "package2", "object")
     deepGet(Path("source/object"))(state) should not be empty
   }
@@ -141,5 +143,21 @@ class IsolatedRepoSpec extends UnitSpec {
     val (_, nextRepo) = io(changeIO)
 
     nextRepo("package1").contents.loneElement.kind shouldBe ContentKind.Garbage
+  }
+
+  "IsolatedRepo#canAdd" should "delegate to the source passed in constructor" in {
+    for (value <- Seq(true, false)) {
+      val (_, result) = IsolatedRepo("", CanAddTest(value), "", Set()) flatMap (_ canAdd "ooze") on
+        fs()
+      result shouldEqual value
+    }
+  }
+
+  case class CanAddTest(canAddValue: Boolean) extends Source[IO] {
+    override def list: IO[Stream[(Package, Media[IO])]] = Stream.empty.pure[IO].widen
+    override def add(key: String): IO[(Package, Media[IO])] = fail()
+    override def remove(key: String): IO[Unit] = fail()
+    override def rename(from: String, to: String): IO[Media[IO]] = fail()
+    override def canAdd(key: String): IO[Boolean] = canAddValue.pure[IO]
   }
 }

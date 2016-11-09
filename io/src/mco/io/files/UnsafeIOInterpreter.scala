@@ -1,5 +1,7 @@
 package mco.io.files
 
+import java.nio.file.attribute.BasicFileAttributes
+
 import better.files.File
 import cats._
 import com.olegpy.schive.Archive
@@ -35,4 +37,6 @@ object UnsafeIOInterpreter extends MonadicIO.Interp[Id] {
 
   override def moveTree(source: Path, dest: Path): Unit =
     { source.f.moveTo(dest.f, overwrite = true); () }
+
+  override def stat(path: Path): BasicFileAttributes = path.f.attributes
 }

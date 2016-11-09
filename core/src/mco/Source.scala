@@ -40,4 +40,10 @@ trait Source[M[_]] {
     * @return media instance for renamed object
     */
   def rename(from: String, to: String): M[Media[M]]
+
+  /**
+    * Check if object described by key can be, in principle, added to the source as
+    * a package. Does not need to check for conflicts, but should generally not fail.
+    */
+  def canAdd(key: String): M[Boolean]
 }

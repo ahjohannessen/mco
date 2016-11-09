@@ -48,6 +48,12 @@ object Stubs {
 
     override def rename(from: String, to: String): IO[Media[IO]] =
       sys.error("Operation not supported")
+
+    /**
+      * Check if object described by key can be, in principle, added to the source as
+      * a package. Does not need to check for conflicts, but should generally not fail.
+      */
+    override def canAdd(key: String): IO[Boolean] = IO.pure(false)
   }
 
   val emptys: Set[String] = Set.empty

@@ -19,9 +19,10 @@ class EffectRepoSpec extends UnitSpec {
     effect.key should equal (repo.key)
   }
 
-  "EffectRepo#change, add, remove and thumbnail" should "have their effect transformed" in {
+  "EffectRepo#canAdd, change, add, remove and thumbnail" should "have their effect transformed" in {
     val repo = new EffectRepo[(String, ?), Const[String, ?], Int](stub, nat)
 
+    repo canAdd "ooze" shouldBe Const("canAdd")
     repo change ("foo", x => x) shouldBe Const("change")
     repo add "bar" shouldBe Const("add")
     repo remove "eggs" shouldBe Const("remove")
@@ -45,9 +46,11 @@ class EffectRepoSpec extends UnitSpec {
 
     override def change(oldKey: String, updates: Package): (String, Self) = ("change", stub)
 
-    override def add(f: String): (String, Self) = ("add", stub)
+    override def add(f: String): (String, (Package, Self)) = ("add", (this(""), stub))
 
     override def remove(s: String): (String, Self) = ("remove", stub)
+
+    override def canAdd(f: String): (String, Boolean) = ("canAdd", false)
   }
 
   private def nat = new ((String, ?) ~> Const[String, ?]) {
