@@ -72,7 +72,7 @@ class BulkIOSpec extends UnitSpec {
     ))
   }
 
-  def repoStub = new Repository[IO, Unit] {
+  private def repoStub = new Repository[IO, Unit] {
     override def key: String = fail()
     override def state: Unit = fail()
     override def apply(key: String): Package = fail()

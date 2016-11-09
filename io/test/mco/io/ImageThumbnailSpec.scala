@@ -80,7 +80,7 @@ class ImageThumbnailSpec extends UnitSpec {
 
   "ImageThumbnail.Provied" should "mixin ImageThumbnail as thumbnail implementation" in {
     new ImageThumbnail.Provided {
-      override def path = Path("foo")
+      override def path: Path = Path("foo")
     }.thumbnail shouldBe an [ImageThumbnail]
   }
 

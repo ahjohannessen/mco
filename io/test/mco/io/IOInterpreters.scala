@@ -25,8 +25,8 @@ object IOInterpreters {
 
     def fs(seq: (String, FileSystemObject)*): Dir = Dir(seq.toMap)
     def dir(seq: (String, FileSystemObject)*): FileSystemObject = Dir(seq.toMap)
-    def obj(data: Vector[Byte] = Vector.empty, offset: FiniteDuration = 0.second) =
-      Obj(data, offset)
+    def obj(data: Vector[Byte] = Vector.empty, offset: FiniteDuration = 0.second
+           ): FileSystemObject = Obj(data, offset)
 
     def obj(data: Array[Byte]): FileSystemObject = Obj(data.toVector, 0.second)
     def arc(seq: (String, FileSystemObject)*): FileSystemObject = Arc(Dir(seq.toMap))
