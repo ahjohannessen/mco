@@ -12,7 +12,7 @@ lazy val ui = project
   .settings(commonSettings: _*)
 
 lazy val commonSettings = Seq(
-  version := "0.1",
+  version := "0.1.0",
   scalaVersion := "2.11.8",
   crossPaths := false,
 

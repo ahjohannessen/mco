@@ -9,6 +9,7 @@ case class UIState(
   repoName: String,
   packages: Vector[Package],
   currentPackage: Option[Package] = None,
+  pendingAdds: Option[UIState.PendingAdds] = None,
   thumbnailURL: Option[URL] = None
 ) {
   def changeBy(action: UIAction): Option[UIState] = action match {
@@ -25,6 +26,10 @@ case class UIState(
         }))
       ).some
     case AddObjects(_, _) => none
+    case CancelPendingAdds => copy(pendingAdds = None).some
+    case SubmitPendingAdds(_) => none
+    case ReassociatePending(k, v) => copy(pendingAdds = pendingAdds.map(pa =>
+      pa.copy(assoc = pa.assoc updated (k, v)))).some
   }
 
   private def updateFn(key: String, f: Package => Package)(pkg: Package) = pkg match {
@@ -36,4 +41,12 @@ case class UIState(
     packages = packages.map(updateFn(key, f)),
     currentPackage = currentPackage.map(updateFn(key, f))
   )
+}
+
+object UIState {
+  case class PendingAdds(
+                        packages: Vector[String],
+                        images: Vector[String],
+                        assoc: Map[String, Option[String]]
+                        )
 }

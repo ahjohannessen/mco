@@ -37,6 +37,8 @@ object ExecTestState extends ExecState[Try, UIState] {
         val newPackages = state.packages.toSet ++ addedPackages
         UIState(state.repoName, newPackages.toVector)
       case AddObjects(_, _) => throw new Exception("Thubmnails not supported")
+      case CancelPendingAdds | ReassociatePending(_, _) | SubmitPendingAdds(_) =>
+        throw new Exception()
     }).fproduct(identity)
   }
 }

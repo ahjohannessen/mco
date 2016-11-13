@@ -1,10 +1,11 @@
 package mco.ui.desktop
 
+import javafx.beans.value.{ChangeListener, ObservableValue => JObsValue}
 import javafx.beans.property.ObjectProperty
 import javafx.collections.ObservableList
 
 import scalafx.application.Platform.runLater
-import scalafx.beans.property.Property
+import scalafx.beans.property.{Property, ObjectProperty => SFXObjProp}
 import scalafx.beans.value.ObservableValue
 import scalafx.collections.{fillCollection, fillSFXCollection}
 import scalafx.delegate.SFXDelegate
@@ -33,6 +34,20 @@ object ObservableBinding {
     }
   }
 
+  implicit class JObservableValueOps[J](val self: JObsValue[J]) {
+    def observe(): Observable[J] = {
+      val subj = BehaviorSubject(self.getValue)
+      self.addListener(new ChangeListener[J] {
+        override def changed(observable: JObsValue[_ <: J], oldValue: J, newValue: J): Unit = {
+          subj.onNext(newValue)
+          ()
+        }
+      })
+      subj.onNext(self.getValue)
+      subj
+    }
+  }
+
   implicit class JObjectPropertyOps[J <: AnyRef](val self: ObjectProperty[J]) extends AnyVal {
     def -<<(obs: Observable[J]): Unit = { obs.foreach(x => runLater(self.set(x))); () }
     def =<<[B](obs: Observable[_ <: Iterable[B]])(implicit ev: J <:< ObservableList[B]): Unit = {
@@ -46,5 +61,13 @@ object ObservableBinding {
     }
 
     def -<<(obs: Observable[_ <: SFXDelegate[A]]): Unit = self =<< obs.map(Seq(_))
+  }
+
+  implicit class MonixObservableOps[A](val self: Observable[A]) extends AnyVal {
+    def lastSeen(): SFXObjProp[Option[A]] = {
+      val prop = SFXObjProp[Option[A]](None)
+      prop -<< self.map(Some(_))
+      prop
+    }
   }
 }

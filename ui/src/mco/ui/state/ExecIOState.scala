@@ -7,7 +7,7 @@ import cats.syntax.all._
 import com.typesafe.config.ConfigFactory
 import mco._
 import mco.config.{LoadedRepo, RepoConfigs}
-import mco.io.Fail
+import mco.io.{BulkIO, Fail}
 import mco.io.files._
 import mco.ui.state.PipeSyntax._
 
@@ -64,7 +64,16 @@ object ExecIOState extends ExecState[IO, Repository[IO, Unit]] {
               case c: Any => c
             }))) |> withNewState
       case AddObjects(paths, AdditionContext.Packages) =>
-        paths.foldM[IO, Repository[IO, Unit]](repo)(_ add_ _) |> withNewState
+        repo |> BulkIO.classify(paths map Path) flatMap { case BulkIO.ClassifiedPaths(pkgPaths, imgPaths) =>
+          val (packages, images) = (pkgPaths map (_.asString), imgPaths map (_.asString))
+          val missingImagesQty = packages.length - images.length
+          val initialAssoc =
+            packages zip (images.map(_.some) ++ Vector.fill(missingImagesQty)(none))
+          val adds = UIState.PendingAdds(packages, images, initialAssoc.toMap)
+          val stateWithPending: UIState = state.copy(pendingAdds = Some(adds))
+          if (packages.isEmpty) Fail.UnexpectedType("dragged files", "a valid package").io
+          else (repo, stateWithPending).pure[IO]
+        }
 
       case AddObjects(Vector(imgPath), AdditionContext.Thumbnail) =>
         state.currentPackage
@@ -76,6 +85,13 @@ object ExecIOState extends ExecState[IO, Repository[IO, Unit]] {
 
       case AddObjects(_, AdditionContext.Thumbnail) =>
         Fail.UnexpectedType("dropped elements", "just one image").io
+
+      case ReassociatePending(_, _) | CancelPendingAdds => repo.pure[IO] |> withNewState
+
+      case SubmitPendingAdds(adds) =>
+        repo |>
+          BulkIO.add[Unit](adds.assoc.map { case (k, v) => Path(k) -> v.map(Path) }) |>
+          withNewState
     }
   }
 

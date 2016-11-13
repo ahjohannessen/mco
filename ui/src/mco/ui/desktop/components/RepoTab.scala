@@ -5,8 +5,8 @@ import scalafx.scene.control.Tab
 import scalafx.scene.layout.{HBox, VBox}
 
 import mco.Content
-import mco.ui.desktop.UIComponent
 import mco.ui.desktop.ObservableBinding._
+import mco.ui.desktop.UIComponent
 import mco.ui.desktop.components.thumbnail.PackageThumbnail
 import mco.ui.state.{UIAction, UIState}
 import monix.reactive.Observable
@@ -17,7 +17,8 @@ object RepoTab extends UIComponent[UIState, Tab] {
     closable = false
     content = new HBox { contentRoot =>
       padding = Insets(10)
-      children = Seq(
+
+      private val mainView = Seq(
         RepoPackagesTable(states, act),
         new VBox {
           padding = Insets(0, 0, 0, 10)
@@ -29,6 +30,15 @@ object RepoTab extends UIComponent[UIState, Tab] {
           )
         }
       )
+
+      private val adds = states map { _.pendingAdds } collect { case Some(a) => a }
+
+      private val pendingAddsView = Seq(BulkAssoc(adds, act))
+
+      children =<< states.map { s =>
+        if (s.pendingAdds.isEmpty) mainView
+        else pendingAddsView
+      }
     }
   }
 }
